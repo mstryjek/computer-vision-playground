@@ -1,0 +1,46 @@
+## TODO Copy common config to every subconfig dict
+COMMON:                     ## Common values that apply to all modules 
+  SHAPE: [480, 640]         ## Image shape (h, w) [uint, uint]
+
+IO:                         ## Config for image input/output
+  CAPTURE: 0                ## Camera index or video path [uint | str]
+  SAVE: False               ## Whether to save images/videos [bool]
+  SAVE_PATH: 'output'       ## Path to save directory [str]
+  SAVE_FORMAT: 'mp4'        ## Save format, either one of video formats or one of image formats [str]
+  FPS: 30                   ## Frames per second [uint]
+
+VIS:                        ## Config for image visualizer
+  WINNAME: 'Fingers'        ## OpenCV window name [str]
+  INSPECT_KEY: 'c'          ## Key to press to inspect intermediate image [char]
+  BREAK_KEY: 'q'            ## Key to press to quit out of program [char]
+  CONTINUE_KEY: 'd'         ## Key to press to go to next processing step [char]
+  BACK_KEY: 'a'             ## Key to press to go to previous processing step [char]
+  # COLOR: [0,255,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
+  ALPHA: 0.85               ## Opacity factor for drawing [float]
+  RECT_H: 40                ## Singular indicator height, in px [uint]
+  RECT_W: 10                ## Singular indicator width, in px [uint]
+  RECT_COLOR: [255,213,0]   ## Indicator color, in BGR [Tuple[uint8, uint8, uint8]]
+  RECT_GRAY: [180,180,180]  ## Color of inactive indicators [Tuple[uint8, uint8, uint8]]
+  NUM_RECTS: 5              ## Number of indicators to draw
+  MARGIN: 4                 ## Margin for items in textbox, in px [uint]
+  TEXT: 'FINGERS: '         ## Text to precede numeric indicators [str]
+  TEXT_BG: [90, 90, 90]     ## Textbox background color, in BGR [Tuple[uint8, uint8, uint8]]
+  TEXT_SCALE: 2.0           ## Scale of text for textbox [float]
+
+PROCESSING:                 ## Config for image processing
+  COLOR_BOUNDS:             ## HSV lower and upper bounds for skin detection
+    LOW:                    ## HSV lower bounds [Dict[str, uint8]]
+      H: 0
+      S: 20
+      V: 70
+    HIGH:                   ## HSV upper bounds [Dict[str, uint8]]
+      H: 30
+      S: 255
+      V: 250
+  BLUR_SIZE: 7              ## Blur kernel size for gaussian blurring [uint]
+  CLOSE_SIZE: 3             ## Mothpology kernel size for closing operation [uint]
+  CLOSE_ITERS: 3            ## How many iterations of closing to use [uint]
+  CIRCLE_SCALE: 1.8         ## Scale of inscribed circle to separete fingers [float]
+  SURF_RATIO: 0.2           ## Treshold to sort out shapes ralative to maximum [float]
+  BLOB_AREA_THRESH: 20      ## Minimum blob area to be kept as valid [uint]
+  NUM_FRAMES: 5             ## Number of frames to average for [uint]
