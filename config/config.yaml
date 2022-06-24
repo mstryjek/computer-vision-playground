@@ -4,22 +4,22 @@ COMMON:                     ## Common values that apply to all modules
 
 IO:                         ## Config for image input/output
   CAPTURE: 0                ## Camera index or video path [uint | str]
-  SAVE: False               ## Whether to save images/videos [bool]
-  SAVE_PATH: 'output'       ## Path to save directory [str]
-  SAVE_FORMAT: 'mp4'        ## Save format, either one of video formats or one of image formats [str]
+  SAVE: False               ## Whether to save video stream [bool]
+  SAVE_PATH: 'output'       ## Path to save directory, either absolute or relative [str]
+  VIDEO_SAVE_FORMAT: 'mp4'  ## Save format for stream writing, one of `ImageIO` video formats [str]
+  IMAGE_SAVE_FORMAT: 'png'  ## Save format for screenshots, one of `ImageIO` image formats [str]
   FPS: 30                   ## Frames per second [uint]
 
-VIS:                        ## Config for image visualizer
-  WINNAME: 'Fingers'        ## OpenCV window name [str]
+VISUALIZATION:              ## Config for image visualizer
+  WINDOW_NAME: 'Processing' ## OpenCV window name [str]
   INSPECT_KEY: 'c'          ## Key to press to inspect intermediate image [char]
   BREAK_KEY: 'q'            ## Key to press to quit out of program [char]
   CONTINUE_KEY: 'd'         ## Key to press to go to next processing step [char]
   BACK_KEY: 'a'             ## Key to press to go to previous processing step [char]
-  # COLOR: [0,255,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
+  COLOR: [255,213,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
   ALPHA: 0.85               ## Opacity factor for drawing [float]
   RECT_H: 40                ## Singular indicator height, in px [uint]
   RECT_W: 10                ## Singular indicator width, in px [uint]
-  RECT_COLOR: [255,213,0]   ## Indicator color, in BGR [Tuple[uint8, uint8, uint8]]
   RECT_GRAY: [180,180,180]  ## Color of inactive indicators [Tuple[uint8, uint8, uint8]]
   NUM_RECTS: 5              ## Number of indicators to draw
   MARGIN: 4                 ## Margin for items in textbox, in px [uint]

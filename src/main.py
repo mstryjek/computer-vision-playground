@@ -12,7 +12,7 @@ def main() -> None:
     done = False
 
 
-    with ProcessingVisualizer(cfg) as vis, ImageIO(cfg) as io, ImageProcessor(cfg) as proc:
+    with ProcessingVisualizer(cfg.VISUALIZATION) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
         for img in io.read_images():
             vis.reset()
             vis.store(img)
