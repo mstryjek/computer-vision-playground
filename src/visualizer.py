@@ -20,7 +20,6 @@ class ProcessingVisualizer():
         self.CFG = cfg
         self.reset()
         self.inspect_mode = False
-        ## TODO Precalculate label rect values here
 
 
     def __enter__(self):
@@ -53,7 +52,7 @@ class ProcessingVisualizer():
         Draw a mask onto an image using the color and opactiy (alpha) given in config.
         Image and mask must have the same shape, excluding the number of channels.
         Image should have 3 channels and mask should have 1.
-        You can add support for drawing on a grayscale image by changing `VISUALIZATION.COLOR` in config to 
+        You can add support for drawing on a grayscale image by changing `VISUALIZATION.COLOR` in config to
         be a single value from the 0-255 range.
         """
         ## Safety clauses
@@ -64,10 +63,10 @@ class ProcessingVisualizer():
 
         ## Copy of the image to add with alpha weight later
         ret = img.copy()
-        
+
         ## Draw full opacity color on the copy
         ret[mask != 0] = self.CFG.COLOR
-        
+
         ## Return the mask drawn on the image with the given alpha
         return cv2.addWeighted(img, self.CFG.ALPHA, ret, 1.-self.CFG.ALPHA, 0)
 
@@ -77,7 +76,22 @@ class ProcessingVisualizer():
         Draw a label with information about the current frame number, processing step id and processing
         step name (if given). Uses the `ALPHA` value from config.
         """
+        draw_img = self.images[step].copy()
 
+        text = f'FRAME: {frame_id} | STEP {step+1}'
+        text = text + f' ({self.step_names[step].upper()})' if self.step_names[step] is not None else text
+
+        (tw, th), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT_SCALE, 1)
+        textbox_size = (th+2*self.CFG.TEXT.MARGIN, tw+2*self.CFG.TEXT.MARGIN)
+
+        rect_org = (draw_img.shape[1] - textbox_size[1] - 1, draw_img.shape[0] - textbox_size[0] - 1)
+        txt_org = (draw_img.shape[1] - textbox_size[1] - 1, draw_img.shape[0] - 1)
+        corner = (draw_img.shape[1] - 1, draw_img.shape[0] - 1)
+
+        draw_img = cv2.rectangle(draw_img, rect_org, corner, self.CFG.TEXT.BG_COLOR)
+        draw_img = cv2.putText(draw_img, text, txt_org, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, self.CFG.TEXT.COLOR, 1, cv2.LINE_AA)
+
+        return cv2.addWeighted(draw_img, self.CFG.ALPHA, self.images[step], 1.-self.CFG.ALPHA, 0)
 
 
     def show(self, draw_info: bool = True, frame_id: int = 0) -> Tuple[bool, ImagesToSave]:

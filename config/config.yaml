@@ -1,4 +1,3 @@
-## TODO Copy common config to every subconfig dict
 COMMON:                     ## Common values that apply to all modules 
   SHAPE: [480, 640]         ## Image shape (h, w) [uint, uint]
 
@@ -12,40 +11,35 @@ IO:                         ## Config for image input/output
 
 VISUALIZATION:              ## Config for image visualizer
   WINDOW_NAME: 'Processing' ## OpenCV window name [str]
-  KEYS:
-    INSPECT: 'c'          ## Key to press to inspect intermediate image [char]
-    BREAK: 'q'            ## Key to press to quit out of program [char]
-    CONTINUE: 'd'         ## Key to press to go to next processing step [char]
-    BACK: 'a'             ## Key to press to go to previous processing step [char]
-    SCREENSHOT: 's'
-    RESTORE: 'r'
-    ZOOM_IN: '+'
-    ZOOM_OUT: '-'
+  KEYS:                     ## Key bindings for program control. Key values should not repeat, as it may lead to unpredictable behavior [Dict[str, char]]
+    INSPECT: 'c'            ## Key to press to inspect intermediate image [char]
+    BREAK: 'q'              ## Key to press to quit out of program [char]
+    CONTINUE: 'd'           ## Key to press to go to next processing step [char]
+    BACK: 'a'               ## Key to press to go to previous processing step [char]
+    SCREENSHOT: 's'         ## Key to press to save current processing step (only in inspect mode) [char]
+    RESTORE: 'r'            ## Key to press to reset zoom state to 1x
+    ZOOM_IN: '='            ## Key to press to increase zoom by 1x
+    ZOOM_OUT: '-'           ## Key to press to decrease zoom by 1x
   COLOR: [255,213,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
   ALPHA: 0.85               ## Opacity factor for drawing [float]
-  RECT_H: 40                ## Singular indicator height, in px [uint]
-  RECT_W: 10                ## Singular indicator width, in px [uint]
-  RECT_GRAY: [180,180,180]  ## Color of inactive indicators [Tuple[uint8, uint8, uint8]]
-  NUM_RECTS: 5              ## Number of indicators to draw
-  MARGIN: 4                 ## Margin for items in textbox, in px [uint]
-  TEXT: 'FINGERS: '         ## Text to precede numeric indicators [str]
-  TEXT_BG: [90, 90, 90]     ## Textbox background color, in BGR [Tuple[uint8, uint8, uint8]]
-  TEXT_SCALE: 2.0           ## Scale of text for textbox [float]
+  TEXT:
+    MARGIN: 4               ## Margin for items in textbox, in px [uint]
+    SCALE: 2.0              ## Scale of text for textbox [float]
+    COLOR: [255, 255, 255]  ## Text color, in BGR [Tuple[uint8, uint8, uint8]]
+    BG_COLOR: [130,130,130] ## Textbox background color, in BGR [Tuple[uint8, uint8, uint8]]
 
 PROCESSING:                 ## Config for image processing
-  COLOR_BOUNDS:             ## HSV lower and upper bounds for skin detection
-    LOW:                    ## HSV lower bounds [Dict[str, uint8]]
-      H: 0
-      S: 20
-      V: 70
-    HIGH:                   ## HSV upper bounds [Dict[str, uint8]]
-      H: 30
-      S: 255
-      V: 250
-  BLUR_SIZE: 7              ## Blur kernel size for gaussian blurring [uint]
-  CLOSE_SIZE: 3             ## Mothpology kernel size for closing operation [uint]
-  CLOSE_ITERS: 3            ## How many iterations of closing to use [uint]
-  CIRCLE_SCALE: 1.8         ## Scale of inscribed circle to separete fingers [float]
-  SURF_RATIO: 0.2           ## Treshold to sort out shapes ralative to maximum [float]
-  BLOB_AREA_THRESH: 20      ## Minimum blob area to be kept as valid [uint]
-  NUM_FRAMES: 5             ## Number of frames to average for [uint]
+  BLOB_AREA_THRESH: 20      ## Minimum blob area to be kept as valid, in pixels [uint]
+  BLUR_SIZE: 7              ## Blur kernel size for gaussian blurring [uint | Tuple[uint, uint]]
+  EROSION:                  ## Arguments for erosion [Dict[str, uint | Tuple[uint, uint]]]
+    KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
+    ITERATIONS: 2           ## Number of iterations for the morphology op [uint]
+  DILATION:                 ## Arguments for dilation [Dict[str, uint | Tuple[uint, uint]]]
+    KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
+    ITERATIONS: 2           ## Number of iterations for the morphology op [uint]
+  CLOSING:                  ## Arguments for closing [Dict[str, uint | Tuple[uint, uint]]]
+    KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
+    ITERATIONS: 1           ## Number of iterations for the morphology op [uint]
+  OPENING:                  ## Arguments for opening [Dict[str, uint | Tuple[uint, uint]]]
+    KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
+    ITERATIONS: 1           ## Number of iterations for the morphology op [uint]

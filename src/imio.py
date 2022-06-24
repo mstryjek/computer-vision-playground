@@ -12,6 +12,8 @@ from config import Config
 
 from typing import Iterable, Union, Tuple, Any
 
+from utils import ImagesToSave
+
 
 
 class ImageIO():
@@ -98,6 +100,14 @@ class ImageIO():
         ## Invalid save format specified ==> Exception
         else:
             raise TypeError("Invalid save format")
+
+
+    def save_screenshots(self, images_to_save: ImagesToSave) -> None:
+        """
+        Save images marked as screenshots to separate files.
+        Function skeleton for now.        
+        """
+
 
 
     def _get_filename(self) -> str:
