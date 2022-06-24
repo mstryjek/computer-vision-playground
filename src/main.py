@@ -13,7 +13,7 @@ def main() -> None:
 
 
     with ProcessingVisualizer(cfg.VISUALIZATION) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
-        for img in io.read_images():
+        for frame_id, img in io.read_images():
             vis.reset()
             vis.store(img)
 
@@ -46,7 +46,7 @@ def main() -> None:
             drawn = vis.draw(img, valid_fingers, num_fingers)
             vis.store(drawn)
 
-            done = vis.show()
+            done = vis.show(frame=frame_id)
             if done: break
 
 

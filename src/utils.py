@@ -12,7 +12,6 @@ class ImagesToSave():
 	Simple dataclass with info about images to be saved, along with the processing step index
 	and name (if given) that produced that image
 	"""
-	frame: int
 	images: List[np.ndarray] = []
 	steps: List[int] = []
 	step_names: List[str] = []

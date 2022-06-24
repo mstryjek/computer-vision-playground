@@ -35,6 +35,9 @@ class ImageIO():
         ## Keep config internally for quick access
         self.CFG = cfg
 
+        ## Keep internal number of frames
+        self.cnt = 0
+
         ## Get video capture
         self.cap = cv2.VideoCapture(self.CFG.CAPTURE)
         self.cap.set(cv2.CAP_PROP_FPS, self.CFG.FPS)
@@ -68,10 +71,12 @@ class ImageIO():
     def read_images(self) -> Iterable[Tuple[int, Union[np.ndarray, None]]]:
         """
         Read in images consecutively from cap.
+        Note that this function can still return `None` (an empty image) since you may want to implement
+        your own handling of None-type values.
         """
         while self.cap.isOpened():
             ret, frame = self.cap.read()
-
+            self.cnt += 1
             yield cv2.resize(frame, tuple(self.CFG.COMMON.SHAPE[::-1]))
 
 
@@ -81,7 +86,7 @@ class ImageIO():
         """
         ## Raise exception if saving is disabled but saving called
         if not self.CFG.SAVE:
-            raise ValueError("Save called but is disabled in config")
+            raise TypeError("Save called but is disabled in config")
 
         ## Get file save format stored in config
         file_save_format = self.CFG.SAVE_FORMAT.lstrip('.')
@@ -92,7 +97,7 @@ class ImageIO():
 
         ## Invalid save format specified ==> Exception
         else:
-            raise ValueError("Invalid save format")
+            raise TypeError("Invalid save format")
 
 
     def _get_filename(self) -> str:

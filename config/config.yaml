@@ -12,10 +12,15 @@ IO:                         ## Config for image input/output
 
 VISUALIZATION:              ## Config for image visualizer
   WINDOW_NAME: 'Processing' ## OpenCV window name [str]
-  INSPECT_KEY: 'c'          ## Key to press to inspect intermediate image [char]
-  BREAK_KEY: 'q'            ## Key to press to quit out of program [char]
-  CONTINUE_KEY: 'd'         ## Key to press to go to next processing step [char]
-  BACK_KEY: 'a'             ## Key to press to go to previous processing step [char]
+  KEYS:
+    INSPECT: 'c'          ## Key to press to inspect intermediate image [char]
+    BREAK: 'q'            ## Key to press to quit out of program [char]
+    CONTINUE: 'd'         ## Key to press to go to next processing step [char]
+    BACK: 'a'             ## Key to press to go to previous processing step [char]
+    SCREENSHOT: 's'
+    RESTORE: 'r'
+    ZOOM_IN: '+'
+    ZOOM_OUT: '-'
   COLOR: [255,213,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
   ALPHA: 0.85               ## Opacity factor for drawing [float]
   RECT_H: 40                ## Singular indicator height, in px [uint]
