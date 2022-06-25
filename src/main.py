@@ -6,11 +6,10 @@ from improc import ImageProcessor
 
 def main() -> None:
 	"""
-	Test function for intermediate visualizations
+	TODO Desc
 	"""
 	cfg = Config.auto()
 	done = False
-
 
 	with ProcessingVisualizer(cfg.VISUALIZATION) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
 		for frame_id, img in io.read_images():
@@ -21,7 +20,7 @@ def main() -> None:
 			vis.store(smoothed, 'Smooth')
 
 			eq = proc.equalize(smoothed)
-			vis.store(eq)
+			vis.store(eq, 'Equalized')
 
 			done, images_to_save = vis.show(frame_id=frame_id)
 			io.save_screenshots(images_to_save)

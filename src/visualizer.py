@@ -76,31 +76,43 @@ class ProcessingVisualizer():
 		Draw a label with information about the current frame number, processing step id and processing
 		step name (if given). Uses the `ALPHA` value from config.
 		"""
+		## Copy image to allow for alpha-weighted composition
 		draw_img = self.images[step].copy()
 
+		## Bottom label text with current frame index, processing step number and processing step name if given
 		text = f'FRAME: {frame_id} | STEP {step+1}'
 		text = text + f' ({self.step_names[step].upper()})' if self.step_names[step] is not None else text
 
+		## Text size and total textbox size
 		(tw, th), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, 1)
 		textbox_size = (th+2*self.CFG.TEXT.MARGIN, tw+2*self.CFG.TEXT.MARGIN)
 
+		## Rectangle top-left corner, text bottom-left corner and image corner (rectangle bottom-right corner)
 		rect_org = (draw_img.shape[1] - textbox_size[1] - 1, draw_img.shape[0] - textbox_size[0] - 1)
 		txt_org = (draw_img.shape[1] - textbox_size[1] - 1 + self.CFG.MARGIN, draw_img.shape[0] - 1 - self.CFG.MARGIN)
 		corner = (draw_img.shape[1] - 1, draw_img.shape[0] - 1)
 
+		## Draw rectangle and text on the image
 		draw_img = cv2.rectangle(draw_img, rect_org, corner, self.CFG.TEXT.BG_COLOR, -1)
 		draw_img = cv2.putText(draw_img, text, txt_org, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, self.CFG.TEXT.COLOR, 1, cv2.LINE_AA)
 
+		## Return an alpha-weighted composition of the original image and the image with the label
 		return cv2.addWeighted(draw_img, self.CFG.ALPHA, self.images[step], 1.-self.CFG.ALPHA, 0)
 
 
-	def show(self, draw_info: bool = True, frame_id: int = 0) -> Tuple[bool, ImagesToSave]:
+	def show(self, draw_label: bool = True, frame_id: int = 0) -> Tuple[bool, ImagesToSave]:
 		"""
 		Show images and return whether program should exit.
 		Shows first image given if in stream mode or iterates through processing steps with keyboard
 		interaction if in inspect mode.
-		Returns whether program should exit.
+		Returns whether program should exit and the list of images to save (screenshots taken) with 
+		frame and processing step info.
+		
+		Args:
+		- `draw_label` - whether to draw a label in the bottom-right corner with information about the current frame and processing step
+		- `frame_id` - index of the current frame being displayed. Ignored if `draw_label` is `False`
 		"""
+		## Dataclass containing images to save
 		images_to_save = ImagesToSave()
 
 		## Safeguard against uninitialized visualizer
@@ -111,28 +123,51 @@ class ProcessingVisualizer():
 		if self.inspect_mode:
 			i = 0
 			while True:
-				img = self._draw_frame_info(frame_id, i) if draw_info else self.images[i]
+				## Get image with label (if specified) or raw image if label is turned off
+				img = self._draw_frame_info(frame_id, i) if draw_label else self.images[i]
+
+				## Show the image on the window
 				cv2.imshow(self.CFG.WINDOW_NAME, img)
+				
+				## Get user input to interact with the program
 				key = cv2.waitKey(0)
+
+				## Move the displayed processing forward one step
 				if key == ord(self.CFG.KEYS.CONTINUE):
 					i = min(i+1, len(self.images) - 1)
+				
+				## Move the displayed processing backwards one step
 				elif key == ord(self.CFG.KEYS.BACK):
 					i = max(i-1, 0)
+
+				## Exit out of inspect mode
 				elif key == ord(self.CFG.KEYS.INSPECT):
 					self.inspect_mode = False
 					break
-				elif key == ord(self.CFG.KEYS.BREAK):
+				
+				## Exit out of the program
+				elif key == ord(self.CFG.KEYS.EXIT):
 					return True, images_to_save
+				
+				## Take a screenshot of the current step being displayed (save it to an image file)
+				## Note that even if the label is being displayed, the raw image (without the label) will be saved
+				elif key == ord(self.CFG.KEYS.SCREENSHOT):
+					images_to_save.add(self.images[i], i, self.step_names[i])
+
 
 		## Show the last image (most likely the final processing step) given to the visualizer
 		else:
 			cv2.imshow(self.CFG.WINDOW_NAME, self.images[-1])
 
-			## Check for change to inspect mode
+			## Get user input
 			key = cv2.waitKey(1)
+
+			## Enter into inspect mode if specified
 			if key == ord(self.CFG.KEYS.INSPECT):
 				self.inspect_mode = True
 
-		if key == ord(self.CFG.KEYS.BREAK):
-			return True, images_to_save
+			## Exit out of the program entirely
+			elif key == ord(self.CFG.KEYS.EXIT):
+				return True, images_to_save
+		
 		return False, images_to_save

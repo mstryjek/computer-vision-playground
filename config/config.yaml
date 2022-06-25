@@ -1,9 +1,8 @@
 COMMON:                     ## Common values that apply to all modules 
-  SHAPE: [480, 640]         ## Image shape (h, w) [uint, uint]
+  SHAPE: [720, 960]         ## Image shape (h, w) [uint, uint]
 
 IO:                         ## Config for image input/output
   CAPTURE: 0                ## Camera index or video path [uint | str]
-  SAVE: False               ## Whether to save video stream [bool]
   SAVE_PATH: 'output'       ## Path to save directory, either absolute or relative [str]
   VIDEO_SAVE_FORMAT: 'mp4'  ## Save format for stream writing, one of `ImageIO` video formats [str]
   IMAGE_SAVE_FORMAT: 'png'  ## Save format for screenshots, one of `ImageIO` image formats [str]
@@ -13,7 +12,7 @@ VISUALIZATION:              ## Config for image visualizer
   WINDOW_NAME: 'Processing' ## OpenCV window name [str]
   KEYS:                     ## Key bindings for program control. Key values should not repeat, as it may lead to unpredictable behavior [Dict[str, char]]
     INSPECT: 'c'            ## Key to press to inspect intermediate image [char]
-    BREAK: 'q'              ## Key to press to quit out of program [char]
+    EXIT: 'q'               ## Key to press to quit out of program [char]
     CONTINUE: 'd'           ## Key to press to go to next processing step [char]
     BACK: 'a'               ## Key to press to go to previous processing step [char]
     SCREENSHOT: 's'         ## Key to press to save current processing step (only in inspect mode) [char]
@@ -31,6 +30,7 @@ VISUALIZATION:              ## Config for image visualizer
 PROCESSING:                 ## Config for image processing
   BLOB_AREA_THRESH: 20      ## Minimum blob area to be kept as valid, in pixels [uint]
   BLUR_SIZE: 7              ## Blur kernel size for gaussian blurring [uint | Tuple[uint, uint]]
+  THRESHOLD: 128            ## Threshold value for binary thresholding [uint]
   EROSION:                  ## Arguments for erosion [Dict[str, uint | Tuple[uint, uint]]]
     KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
     ITERATIONS: 2           ## Number of iterations for the morphology op [uint]
