@@ -81,11 +81,11 @@ class Config(dict):
 		"""
 		Search recursively for a key if it was not found as an immediate member variable of this object.
 		This is for convenience.
+
 		Args:
-		---
 		- `key`: Attribute name to find
+
 		Returns:
-		---
 		- `None` if the attribute was never find
 		- an instance of `Config`
 		"""
@@ -113,7 +113,7 @@ class Config(dict):
 		retdict = {}
 
 		for key, value in self.items():
-			if key.startswith('_'):
+			if key.startswith('_'): ## Ignore private keys. Currently not implemented but leaving this in for future compatibility
 				continue
 			elif isinstance(value, Config):
 				retdict[key] = value.dict()

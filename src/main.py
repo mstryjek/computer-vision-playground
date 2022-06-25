@@ -4,17 +4,25 @@ from visualizer import ProcessingVisualizer
 
 from improc import ImageProcessor
 
+
 def main() -> None:
-	"""
-	TODO Desc
-	"""
+	## Find the config file - automatically, even of it's been moved
 	cfg = Config.auto()
 	done = False
 
 	with ProcessingVisualizer(cfg.VISUALIZATION) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
 		for frame_id, img in io.read_images():
-			vis.reset()
+			vis.reset() ## Important - you should reset the images stored each loop iterations, otherwise you'll quickly run out of memory
 			vis.store(img, 'Original')
+
+			"""
+			You are provided with an example processing path here (detecting the largest white region in an image),
+			but feel free to replace it with your own!
+			Adding `vis.store(img, 'Name')` after each step will let you inspect your processing path in detail,
+			hopefully helping you improve your algorithm.
+
+			Feel free to delete this comment after you've read through it.
+			"""
 
 			smoothed = proc.smooth(img)
 			vis.store(smoothed, 'Smoothed')
@@ -37,13 +45,15 @@ def main() -> None:
 			drawn = vis.draw_mask(img, cnt)
 			vis.store(drawn, 'Final')
 
+			## Save images - images from only one processing step should be saved, since `io` manages only
+			## one video output at a time. Most likely you'll want to create a video with the results of your
+			## algorithm nicely visualized on the original image
 			io.save(drawn)
 
 			done, images_to_save = vis.show(frame_id=frame_id)
-			io.save_screenshots(images_to_save)
+			io.save_screenshots(images_to_save) ## Save screenshots - processing steps marked with `s`
 
 			if done: break
-
 
 
 

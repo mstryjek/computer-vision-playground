@@ -7,12 +7,38 @@ import numpy as np
 
 import os
 import datetime
+import time
 
 from config import Config
 
 from typing import Iterable, Union, Tuple, Any
 
 from utils import ImagesToSave
+
+
+class FPS():
+	"""
+	FPS counter class ensuring a given operation happens with at most the specified intensity
+	(or less frequently if the calculations take a long time).
+	"""
+	def __init__(self, fps: Union[int, float]) -> None:
+		self.delay = 1./fps
+		self.last_call_time = 0.
+
+
+	def sync(self) -> None:
+		"""
+		Synchronize the time to ensure the delay corresponding to the given FPS has passed.
+		"""
+		now = time.time()
+		time_since_last_call = now - self.last_call_time
+
+		if time_since_last_call < self.delay:
+			time.sleep(self.delay - time_since_last_call)
+
+		self.last_call_time = now
+
+
 
 
 
@@ -53,6 +79,9 @@ class ImageIO():
 		self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.CFG.COMMON.SHAPE[0])
 		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH,  self.CFG.COMMON.SHAPE[1])
 
+		## Time counter to ensure correct FPS
+		self.fps = FPS(self.CFG.FPS)
+
 
 	def __enter__(self):
 		"""Enter context."""
@@ -71,7 +100,7 @@ class ImageIO():
 		"""
 		if self.output_initialized:
 			raise RuntimeError('Init output stream called but is already initialized!')
-		
+
 		## Get file saver if saving is specified as video
 		if self.CFG.VIDEO_SAVE_FORMAT.lstrip('.') in ImageIO.VIDEO_FORMATS:
 			fourcc = cv2.VideoWriter_fourcc(*ImageIO.VIDEO_CODECS[self.CFG.VIDEO_SAVE_FORMAT].lower())
@@ -81,7 +110,7 @@ class ImageIO():
 		## Keep internal counter for file naming if image saving is specified
 		else:
 			raise RuntimeError('Invalid stream save format!')
-		
+
 		## Mark the output stream as initialized ok
 		self.output_initialized = True
 
@@ -93,11 +122,15 @@ class ImageIO():
 		your own handling of None-type values.
 		"""
 		while self.cap.isOpened():
+			## Read images and stop stream if empty image returned (for instance end of video file)
 			ret, frame = self.cap.read()
-			if not ret: 
+			if not ret:
 				return
-			
+
+			## Remember the current frame number and wait for the fps to sync (ensure reading video files with target FPS)
+			self.fps.sync()
 			self.cnt += 1
+
 			yield self.cnt, cv2.resize(frame, tuple(self.CFG.COMMON.SHAPE[::-1]))
 
 

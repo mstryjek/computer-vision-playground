@@ -2,15 +2,18 @@ import numpy as np
 import cv2
 
 from config import Config
+from utils import to_kernel
 
 from typing import Any
-
-from utils import to_kernel
 
 
 class ImageProcessor():
 	"""
 	Comprehensive image processing class, containing all logic & vision algorithms.
+	You can implement your own methods for image processing here quite easily.
+	You can use the `self.CFG` variable already existing here, as well as some simpler methods
+	provided by this class.
+	You can also build on the existing methods to create your own image processing algorithm.
 	"""
 	def __init__(self, cfg: Config) -> None:
 		self.CFG = cfg

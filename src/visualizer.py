@@ -14,7 +14,7 @@ from typing import Tuple, Union
 
 class ProcessingVisualizer():
 	"""
-	Class for visualizing images given to it.
+	Class for visualizing images given to it. Has the capability of drawing text info on the images.
 	"""
 	def __init__(self, cfg: Config) -> None:
 		self.CFG = cfg
@@ -80,7 +80,7 @@ class ProcessingVisualizer():
 		draw_img = self.images[step].copy()
 
 		## Bottom label text with current frame index, processing step number and processing step name if given
-		text = f'FRAME: {frame_id} | STEP {step+1}'
+		text = f'FRAME: {frame_id-1} | STEP {step+1}'
 		text = text + f' ({self.step_names[step].upper()})' if self.step_names[step] is not None else text
 
 		## Text size and total textbox size
