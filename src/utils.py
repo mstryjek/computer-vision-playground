@@ -1,6 +1,6 @@
 import numpy as np
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from typing import Iterable, List, Tuple, Union
 
@@ -12,9 +12,9 @@ class ImagesToSave():
 	Simple dataclass with info about images to be saved, along with the processing step index
 	and name (if given) that produced that image
 	"""
-	images: List[np.ndarray] = []
-	steps: List[int] = []
-	step_names: List[str] = []
+	images: List[np.ndarray] = field(default_factory=list)
+	steps: List[int] = field(default_factory=list)
+	step_names: List[str] = field(default_factory=list)
 
 
 	def add(self, img: np.ndarray, step: int, step_name: Union[str, None] = None) -> None:

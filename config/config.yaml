@@ -24,7 +24,7 @@ VISUALIZATION:              ## Config for image visualizer
   ALPHA: 0.85               ## Opacity factor for drawing [float]
   TEXT:
     MARGIN: 4               ## Margin for items in textbox, in px [uint]
-    SCALE: 2.0              ## Scale of text for textbox [float]
+    SCALE: 0.5              ## Scale of text for textbox [float]
     COLOR: [255, 255, 255]  ## Text color, in BGR [Tuple[uint8, uint8, uint8]]
     BG_COLOR: [130,130,130] ## Textbox background color, in BGR [Tuple[uint8, uint8, uint8]]
 

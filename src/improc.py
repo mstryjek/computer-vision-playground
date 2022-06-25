@@ -39,7 +39,8 @@ class ImageProcessor():
 		"""
 		Blur an image to reduce noise.		
 		"""
-		return cv2.GaussianBlur(img, (self.CFG.BLUR_SIZE,)*2, 0)
+		kernel = (self.CFG.BLUR_SIZE,)*2 if isinstance(self.CFG.BLUR_SIZE, int) else self.CFG.BLUR_SIZE
+		return cv2.GaussianBlur(img, kernel, 0)
 
 
 	def remove_small_blobs(self, mask: np.ndarray) -> np.ndarray:
