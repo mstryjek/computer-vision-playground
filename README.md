@@ -3,13 +3,14 @@
 
 
 ## TODO
-- [ ] Find a sample video to test on
 - [ ] Make a nice README with contributing, images, etc.
 - [ ] Check docstrings and comments
 - [ ] Add RGB pixel inspector to inspect mode (with pixel indices) (turn on/off by clicking right mouse button)
 - [ ] Add contour inspection to cursor inspection (area, min/max bounds, center position)
 - [ ] Add zoom in/out functions for better pixel inspection (also a reset key)
+- [ ] Add a slider for value tuning (e.g. threshold)
 - [ ] Fix display for large-scale images (display smaller but crop a part without losing information when zoomed, limit window size with `os.whatever.display.screensize`)
+- [X] Find a sample video to test on
 - [X] Add some sample functions to processing (`self.CFG.EROSION.KERNEL`)
 - [X] Add "screenshot" option (button) to vis+I/O (`s`)
 - [X] Add frame tags and numbers to visualizer

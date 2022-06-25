@@ -135,3 +135,15 @@ class ImageProcessor():
 		
 		return cv2.drawContours(ret, cnts_valid, -1, (255, 255, 255), -1)
 
+
+	def separate_largest_contour(self, mask: np.ndarray) -> np.ndarray:
+		"""
+		Remove all contours except the largest one from the image.
+		Expects a binary image.
+		"""
+		ret = np.zeros(mask.shape, dtype=np.uint8)
+
+		cnts, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+		cnt = max(cnts, key=cv2.contourArea)
+		
+		return cv2.drawContours(ret, [cnt], -1, (255, 255, 255), -1)

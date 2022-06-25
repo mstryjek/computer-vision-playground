@@ -54,9 +54,6 @@ class ImageIO():
 		self.cap.set(cv2.CAP_PROP_FRAME_WIDTH,  self.CFG.COMMON.SHAPE[1])
 
 
-
-
-
 	def __enter__(self):
 		"""Enter context."""
 		return self
@@ -77,7 +74,7 @@ class ImageIO():
 		
 		## Get file saver if saving is specified as video
 		if self.CFG.VIDEO_SAVE_FORMAT.lstrip('.') in ImageIO.VIDEO_FORMATS:
-			fourcc = cv2.VideoWriter_fourcc(ImageIO.VIDEO_CODECS[self.CFG.VIDEO_SAVE_FORMAT.lower()])
+			fourcc = cv2.VideoWriter_fourcc(*ImageIO.VIDEO_CODECS[self.CFG.VIDEO_SAVE_FORMAT].lower())
 			video_path = os.path.join(self.CFG.SAVE_PATH, self._get_video_filename())
 
 			self.writer = cv2.VideoWriter(video_path, fourcc, self.CFG.FPS, tuple(self.CFG.COMMON.SHAPE[::-1]))
@@ -97,6 +94,9 @@ class ImageIO():
 		"""
 		while self.cap.isOpened():
 			ret, frame = self.cap.read()
+			if not ret: 
+				return
+			
 			self.cnt += 1
 			yield self.cnt, cv2.resize(frame, tuple(self.CFG.COMMON.SHAPE[::-1]))
 
@@ -143,7 +143,7 @@ class ImageIO():
 
 	def _get_video_filename(self) -> str:
 		"""Get save filename with extension (excluding path)."""
-		base_filename = datetime.datetime.now().strftime('IMG_%d-%m-%Y_%-H-%M-%S')
+		base_filename = self.CFG.SAVE_PREFIX + '_' + datetime.datetime.now().strftime('%d-%m-%Y_%H-%M-%S')
 		return base_filename + '.' + self.CFG.VIDEO_SAVE_FORMAT.strip('.')
 
 

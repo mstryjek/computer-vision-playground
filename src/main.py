@@ -17,10 +17,27 @@ def main() -> None:
 			vis.store(img, 'Original')
 
 			smoothed = proc.smooth(img)
-			vis.store(smoothed, 'Smooth')
+			vis.store(smoothed, 'Smoothed')
 
-			eq = proc.equalize(smoothed)
+			gray = proc.to_grayscale(smoothed)
+			vis.store(gray, 'Grayscale')
+
+			eq = proc.equalize(gray)
 			vis.store(eq, 'Equalized')
+
+			thresh = proc.thresh(eq)
+			vis.store(thresh, 'Thresholded')
+
+			morph = proc.dilate(thresh)
+			vis.store(morph, 'Dilated')
+
+			cnt = proc.separate_largest_contour(morph)
+			vis.store(cnt, 'Filtered')
+
+			drawn = vis.draw_mask(img, cnt)
+			vis.store(drawn, 'Final')
+
+			io.save(drawn)
 
 			done, images_to_save = vis.show(frame_id=frame_id)
 			io.save_screenshots(images_to_save)

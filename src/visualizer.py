@@ -68,7 +68,7 @@ class ProcessingVisualizer():
 		ret[mask != 0] = self.CFG.COLOR
 
 		## Return the mask drawn on the image with the given alpha
-		return cv2.addWeighted(img, self.CFG.ALPHA, ret, 1.-self.CFG.ALPHA, 0)
+		return cv2.addWeighted(ret, self.CFG.ALPHA, img, 1.-self.CFG.ALPHA, 0)
 
 
 	def _draw_frame_info(self, frame_id: int, step: int) -> np.ndarray:
@@ -105,9 +105,9 @@ class ProcessingVisualizer():
 		Show images and return whether program should exit.
 		Shows first image given if in stream mode or iterates through processing steps with keyboard
 		interaction if in inspect mode.
-		Returns whether program should exit and the list of images to save (screenshots taken) with 
+		Returns whether program should exit and the list of images to save (screenshots taken) with
 		frame and processing step info.
-		
+
 		Args:
 		- `draw_label` - whether to draw a label in the bottom-right corner with information about the current frame and processing step
 		- `frame_id` - index of the current frame being displayed. Ignored if `draw_label` is `False`
@@ -128,14 +128,14 @@ class ProcessingVisualizer():
 
 				## Show the image on the window
 				cv2.imshow(self.CFG.WINDOW_NAME, img)
-				
+
 				## Get user input to interact with the program
 				key = cv2.waitKey(0)
 
 				## Move the displayed processing forward one step
 				if key == ord(self.CFG.KEYS.CONTINUE):
 					i = min(i+1, len(self.images) - 1)
-				
+
 				## Move the displayed processing backwards one step
 				elif key == ord(self.CFG.KEYS.BACK):
 					i = max(i-1, 0)
@@ -144,16 +144,16 @@ class ProcessingVisualizer():
 				elif key == ord(self.CFG.KEYS.INSPECT):
 					self.inspect_mode = False
 					break
-				
+
 				## Exit out of the program
 				elif key == ord(self.CFG.KEYS.EXIT):
 					return True, images_to_save
-				
+
 				## Take a screenshot of the current step being displayed (save it to an image file)
 				## Note that even if the label is being displayed, the raw image (without the label) will be saved
 				elif key == ord(self.CFG.KEYS.SCREENSHOT):
 					images_to_save.add(self.images[i], i, self.step_names[i])
-
+					# images_to_save.add(img, i, self.step_names[i]) ## Switch this line with the one above to save screenshots with visualizations
 
 		## Show the last image (most likely the final processing step) given to the visualizer
 		else:
@@ -169,5 +169,5 @@ class ProcessingVisualizer():
 			## Exit out of the program entirely
 			elif key == ord(self.CFG.KEYS.EXIT):
 				return True, images_to_save
-		
+
 		return False, images_to_save
