@@ -12,7 +12,7 @@ def main() -> None:
 
 	with ProcessingVisualizer(cfg.VISUALIZATION) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
 		for frame_id, img in io.read_images():
-			vis.reset() ## Important - you should reset the images stored each loop iterations, otherwise you'll quickly run out of memory
+			vis.reset() ## Important - you should reset the images stored each loop iterations, otherwise you'll quickly run out of memory. Simple keep this line in
 			vis.store(img, 'Original')
 
 			"""
@@ -23,6 +23,7 @@ def main() -> None:
 
 			Feel free to delete this comment after you've read through it.
 			"""
+			## <<======================= START OF PROCESSING ==============================>>
 
 			smoothed = proc.smooth(img)
 			vis.store(smoothed, 'Smoothed')
@@ -44,6 +45,8 @@ def main() -> None:
 
 			drawn = vis.draw_mask(img, cnt)
 			vis.store(drawn, 'Final')
+
+			## <<========================= END OF PROCESSING ==============================>>
 
 			## Save images - images from only one processing step should be saved, since `io` manages only
 			## one video output at a time. Most likely you'll want to create a video with the results of your

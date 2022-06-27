@@ -2,7 +2,7 @@ COMMON:                     ## Common values that apply to all modules
   SHAPE: [354, 630]         ## Image shape (h, w) [uint, uint]
 
 IO:                         ## Config for image input/output
-  CAPTURE: videos/sample_video.mp4 ## Camera index or video path [uint | str]
+  CAPTURE: videos/cat.mp4   ## Camera index or video path [uint | str]
   SAVE_PATH: output         ## Path to save directory, either absolute or relative [str]
   SAVE_PREFIX: test_video   ## Prefix to add to base output video filename [str]
   VIDEO_SAVE_FORMAT: 'mp4'  ## Save format for stream writing, one of `ImageIO` video formats [str]
