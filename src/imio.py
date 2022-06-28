@@ -11,7 +11,7 @@ import time
 
 from config import Config
 
-from typing import Iterable, Union, Tuple, Any
+from typing import Iterable, Optional, Union, Tuple, Any
 
 from utils import ImagesToSave
 
@@ -160,7 +160,7 @@ class ImageIO():
 			cv2.imwrite(filename, img)
 
 
-	def _get_image_filename(self, step: int, step_name: Union[str, None] = None) -> str:
+	def _get_image_filename(self, step: int, step_name: Optional[str] = None) -> str:
 		"""
 		Get the filename of a screenshot.
 		"""

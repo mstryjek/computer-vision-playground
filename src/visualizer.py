@@ -7,9 +7,9 @@ import cv2
 import numpy as np
 
 from config import Config
-from utils import ImagesToSave
+from utils import ImagesToSave, PixelCoordinate
 
-from typing import Tuple, Union
+from typing import Tuple, Optional
 
 
 class ProcessingVisualizer():
@@ -20,6 +20,10 @@ class ProcessingVisualizer():
 		self.CFG = cfg
 		self.reset()
 		self.inspect_mode = False
+		self.zoom = 1
+		self.mouse_position = PixelCoordinate()
+		self.zoom_center = PixelCoordinate()
+		self.display_pixel_label = False
 
 
 	def __enter__(self):
@@ -39,7 +43,7 @@ class ProcessingVisualizer():
 		self.step_names = []
 
 
-	def store(self, img: np.ndarray, step_name: Union[str, None] = None) -> None:
+	def store(self, img: np.ndarray, step_name: Optional[str] = None) -> None:
 		"""Store an image to be shown later."""
 		self.images.append(img.copy())
 		self.step_names.append(step_name)
@@ -100,6 +104,29 @@ class ProcessingVisualizer():
 		return cv2.addWeighted(draw_img, self.CFG.ALPHA, self.images[step], 1.-self.CFG.ALPHA, 0)
 
 
+	def _mouse_callback(self, event: int, x: int, y: int, flags: Any, params: Any) -> None:
+		"""
+		Mouse event callback for receiveing mouse move and right button click events.
+		"""
+		## Ignore events in stream mode
+		if not self.inspect_mode:
+			return
+
+		if event == cv2.EVENT_RBUTTONDOWN:
+			## TODO
+			pass
+
+		elif event == cv2.EVENT_MOUSEMOVE:
+			## TODO
+			pass
+
+
+	def _get_image(self, draw_label: Optional[bool] = True) -> np.ndarray:
+		"""
+		Get a zoomed in version of the image.
+		"""
+
+
 	def show(self, draw_label: bool = True, frame_id: int = 0) -> Tuple[bool, ImagesToSave]:
 		"""
 		Show images and return whether program should exit.
@@ -124,7 +151,7 @@ class ProcessingVisualizer():
 			i = 0
 			while True:
 				## Get image with label (if specified) or raw image if label is turned off
-				img = self._draw_frame_info(frame_id, i) if draw_label else self.images[i]
+				img = self._get_image(draw_label) #self._draw_frame_info(frame_id, i) if draw_label else self.images[i]
 
 				## Show the image on the window
 				cv2.imshow(self.CFG.WINDOW_NAME, img)
@@ -139,6 +166,18 @@ class ProcessingVisualizer():
 				## Move the displayed processing backwards one step
 				elif key == ord(self.CFG.KEYS.BACK):
 					i = max(i-1, 0)
+
+				## Zoom in on current mouse position
+				elif key == ord(self.CFG.KEYS.ZOOM_IN):
+					self.zoom = min(self.zoom + 1, self.CFG.MAX_ZOOM)
+
+				## Zoom out of current mouse position
+				elif key == ord(self.CFG.KEYS.ZOOM_OUT):
+					self.zoom = max(self.zoom - 1, 1)
+
+				## Reset zoom to 1x
+				elif key == ord(self.CFG.KEYS.RESTORE):
+					self.zoom = 1
 
 				## Exit out of inspect mode
 				elif key == ord(self.CFG.KEYS.INSPECT):
