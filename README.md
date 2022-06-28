@@ -95,4 +95,5 @@ submit a PR!
 - [ ] Add RGB pixel inspector to inspect mode (with pixel indices) (turn on/off by clicking right mouse button)
 - [ ] Add contour inspection to cursor inspection (area, min/max bounds, center position)
 - [ ] Add a slider for value tuning (e.g. threshold)
+- [ ] README - zoom functionality, zoom scrolling, pixel value inspector
 - [X] Add zoom in/out functions for better pixel inspection (also a reset key)

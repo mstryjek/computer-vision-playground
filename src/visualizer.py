@@ -10,7 +10,7 @@ from math import floor, ceil
 from config import Config
 from utils import ImagesToSave, PixelCoordinate
 
-from typing import Tuple, Optional, Any
+from typing import Tuple, Optional, Union, Any
 
 
 class ProcessingVisualizer():
@@ -188,21 +188,10 @@ class ProcessingVisualizer():
 		return ((xmin, xmax), (ymin, ymax), (margin_left, margin_top))
 
 
-	def _get_image(self, draw_label: bool, frame_id: int, step_idx: int) -> np.ndarray:
+	def _zoom_image(self, img: np.ndarray) -> np.ndarray:
 		"""
-		Get a zoomed in version of the image.
+		Zoom an image with the current zoom factor.
 		"""
-		## Return drawn image if no zoom
-		if self.zoom == 1:
-			return self._draw_frame_info(frame_id, step_idx) if draw_label else self.images[step_idx]
-
-		## Safegaurd against uninitialized mouse position - zoom into center
-		if not self.zoom_center:
-			self.zoom_center = PixelCoordinate(x=self.CFG.COMMON.SHAPE[1]//2, y=self.CFG.COMMON.SHAPE[0]//2)
-
-		## Get image to zoom into
-		img = self.images[step_idx]
-
 		## Bound to crop from the original image
 		(xmin, xmax), (ymin, ymax), (margin_left, margin_top) = self._get_crop_bounds()
 
@@ -224,6 +213,46 @@ class ProcessingVisualizer():
 			img = img[self.margin_pixels_top:, :]
 		else:
 			img = img[:self.CFG.COMMON.SHAPE[0] , :]
+
+
+	def _get_inspected_pixel(self) -> Tuple[Union[np.ndarray, int], Tuple[int, int]]:
+		"""
+		Get the value and original image indices of the inspected pixel.
+		Returns (pixel_value, (x, y)) in accordance with OpenCV axes.
+		"""
+		
+
+
+	def _draw_pixel_label(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Draw the pixel inspection label (if enabled) on the image.
+		"""
+		if not self.display_pixel_label:
+			return img
+		
+		px, (x, y) = self._get_inspected_pixel()
+
+
+	def _get_image(self, draw_label: bool, frame_id: int, step_idx: int) -> np.ndarray:
+		"""
+		Get a zoomed in version of the image.
+		"""
+		## Return drawn image if no zoom
+		if self.zoom == 1:
+			return self._draw_frame_info(frame_id, step_idx) if draw_label else self.images[step_idx]
+
+		## Safegaurd against uninitialized mouse position - zoom into center
+		if not self.zoom_center:
+			self.zoom_center = PixelCoordinate(x=self.CFG.COMMON.SHAPE[1]//2, y=self.CFG.COMMON.SHAPE[0]//2)
+
+		## Get image to zoom into
+		img = self.images[step_idx].copy()
+
+		## Get zoomed in image
+		img = self._zoom_image(img)
+
+		## Draw pixel inspection label
+		img = self._draw_pixel_label(img)
 
 		return self._draw_frame_info(frame_id, step_idx, img) if draw_label else img
 
