@@ -43,6 +43,21 @@ class ImagesToSave():
 
 
 
+@dataclass
+class PixelCoordinate():
+	"""
+	A 2D coordinate index class for indexing images.
+	`x` and `y` values correspond to OpenCV axes.
+	"""
+	x: int = -1
+	y: int = -1
+
+	def __bool__(self) -> bool:
+		"""Boolean check if the class has been initialized."""
+		return self.x != -1 and self.y != -1
+
+
+
 def pad(num: int, width: int = 4) -> str:
 	"""Pad an int with zeros to ensure constant filename length."""
 	snum = str(num)

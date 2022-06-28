@@ -2,14 +2,15 @@
 Visualizer class for visualizing intermediate steps of image processing.
 """
 
-from typing import Any
 import cv2
 import numpy as np
 
-from config import Config
-from utils import ImagesToSave
+from math import floor, ceil
 
-from typing import Tuple, Union
+from config import Config
+from utils import ImagesToSave, PixelCoordinate
+
+from typing import Tuple, Optional, Any
 
 
 class ProcessingVisualizer():
@@ -20,11 +21,18 @@ class ProcessingVisualizer():
 		self.CFG = cfg
 		self.reset()
 		self.inspect_mode = False
+		self.zoom = 1
+		self.mouse_position = PixelCoordinate()
+		self.zoom_center = PixelCoordinate()
+		self.display_pixel_label = False
+		self.margin_pixels_left = 0
+		self.margin_pixels_top = 0
 
 
 	def __enter__(self):
 		"""Enter context and create widnow."""
 		cv2.namedWindow(self.CFG.WINDOW_NAME)
+		cv2.setMouseCallback(self.CFG.WINDOW_NAME, self._mouse_callback)
 		return self
 
 
@@ -39,7 +47,7 @@ class ProcessingVisualizer():
 		self.step_names = []
 
 
-	def store(self, img: np.ndarray, step_name: Union[str, None] = None) -> None:
+	def store(self, img: np.ndarray, step_name: Optional[str] = None) -> None:
 		"""Store an image to be shown later."""
 		self.images.append(img.copy())
 		self.step_names.append(step_name)
@@ -71,17 +79,19 @@ class ProcessingVisualizer():
 		return cv2.addWeighted(ret, self.CFG.ALPHA, img, 1.-self.CFG.ALPHA, 0)
 
 
-	def _draw_frame_info(self, frame_id: int, step: int) -> np.ndarray:
+	def _draw_frame_info(self, frame_id: int, step: int, img: Optional[np.ndarray] = None) -> np.ndarray:
 		"""
 		Draw a label with information about the current frame number, processing step id and processing
 		step name (if given). Uses the `ALPHA` value from config.
 		"""
 		## Copy image to allow for alpha-weighted composition
-		draw_img = self.images[step].copy()
+		draw_img = self.images[step].copy() if img is None else img.copy()
+		orig_img = self.images[step].copy() if img is None else img.copy()
 
-		## Bottom label text with current frame index, processing step number and processing step name if given
+		## Bottom label text with current frame index, processing step number and name (if given), as well as zoom amount if more than 1
 		text = f'FRAME: {frame_id-1} | STEP {step+1}'
 		text = text + f' ({self.step_names[step].upper()})' if self.step_names[step] is not None else text
+		text = text + f' [{self.zoom}x]' if self.zoom > 1 else text
 
 		## Text size and total textbox size
 		(tw, th), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, 1)
@@ -97,7 +107,125 @@ class ProcessingVisualizer():
 		draw_img = cv2.putText(draw_img, text, txt_org, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, self.CFG.TEXT.COLOR, 1, cv2.LINE_AA)
 
 		## Return an alpha-weighted composition of the original image and the image with the label
-		return cv2.addWeighted(draw_img, self.CFG.ALPHA, self.images[step], 1.-self.CFG.ALPHA, 0)
+		return cv2.addWeighted(draw_img, self.CFG.ALPHA, orig_img, 1.-self.CFG.ALPHA, 0)
+
+
+	def _mouse_callback(self, event: int, x: int, y: int, flags: Any, params: Any) -> None:
+		"""
+		Mouse event callback for receiveing mouse move and right button click events.
+		"""
+		## Ignore events in stream mode
+		if not self.inspect_mode:
+			return
+
+		## Update mouse position
+		if event in [cv2.EVENT_MOUSEMOVE, cv2.EVENT_RBUTTONDOWN]:
+			self.mouse_position = PixelCoordinate(x, y)
+			if self.zoom == 1:
+				self.zoom_center = PixelCoordinate(x, y)
+
+		## Toggle pixel label on right button click
+		if event == cv2.EVENT_RBUTTONDOWN:
+			self.display_pixel_label = not self.display_pixel_label
+
+
+	def _get_crop_bounds(self) -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[bool, bool]]:
+		"""
+		Get crop bounds for the zoomed part of the image. Returns ((xmin, xmax), (ymin, ymax), (margin_left, margin_top))
+		in accordance with OpenCV axes.
+		"""
+		##
+		zoomed_h = ceil(self.CFG.COMMON.SHAPE[0] / self.zoom)
+		zoomed_w = ceil(self.CFG.COMMON.SHAPE[1] / self.zoom)
+
+		xmin = None
+		xmax = None
+		margin_left = None
+
+		## Bounding the zoom box off of the left image edge
+		if self.zoom_center.x < zoomed_w // 2:
+			xmin = 0
+			xmax = zoomed_w + 1
+			margin_left = False
+		## Bouncing bounding box off of the right image edge
+		elif self.zoom_center.x > self.CFG.COMMON.SHAPE[1] - zoomed_w // 2:
+			xmin = self.CFG.COMMON.SHAPE[1] - zoomed_w
+			xmax = self.CFG.COMMON.SHAPE[1]
+			margin_left	= True
+		## Not close to left/right edge - crop as symetrically as possible
+		else:
+			margin_left = False
+			if zoomed_w % 2 == 1:
+				xmin = self.zoom_center.x - (zoomed_w - 1) // 2
+				xmax = self.zoom_center.x + (zoomed_w - 1) // 2 + 1
+			else:
+				xmin = self.zoom_center.x - zoomed_w // 2
+				xmax = self.zoom_center.x + zoomed_w // 2 + 1
+
+		ymin = None
+		ymax = None
+		margin_top = None
+
+		## Bouncing off of the top edge
+		if self.zoom_center.y < zoomed_h // 2:
+			ymin = 0
+			ymax = zoomed_h
+			margin_top = False
+		## Bouncing the crop box off of the bottom edge
+		elif self.zoom_center.y > self.CFG.COMMON.SHAPE[0] - zoomed_h // 2:
+			ymin = self.CFG.COMMON.SHAPE[0] - zoomed_h
+			ymax = self.CFG.COMMON.SHAPE[0]
+		## Not close to top/bottom edge - crop symetrically
+		else:
+			margin_top = False
+			if zoomed_h % 2 == 1:
+				ymin = self.zoom_center.y - (zoomed_h - 1) // 2
+				ymax = self.zoom_center.y + (zoomed_h - 1) // 2 + 1
+			else:
+				ymin = self.zoom_center.y - zoomed_h // 2
+				ymax = self.zoom_center.y + zoomed_h // 2 + 1
+
+		return ((xmin, xmax), (ymin, ymax), (margin_left, margin_top))
+
+
+	def _get_image(self, draw_label: bool, frame_id: int, step_idx: int) -> np.ndarray:
+		"""
+		Get a zoomed in version of the image.
+		"""
+		## Return drawn image if no zoom
+		if self.zoom == 1:
+			return self._draw_frame_info(frame_id, step_idx) if draw_label else self.images[step_idx]
+
+		## Safegaurd against uninitialized mouse position - zoom into center
+		if not self.zoom_center:
+			self.zoom_center = PixelCoordinate(x=self.CFG.COMMON.SHAPE[1]//2, y=self.CFG.COMMON.SHAPE[0]//2)
+
+		## Get image to zoom into
+		img = self.images[step_idx]
+
+		## Bound to crop from the original image
+		(xmin, xmax), (ymin, ymax), (margin_left, margin_top) = self._get_crop_bounds()
+
+		## Cropped image - still slighly too many pixels
+		img = img[ymin:ymax, xmin:xmax]
+		img = cv2.resize(img, (0, 0), fx=self.zoom, fy=self.zoom, interpolation=cv2.INTER_NEAREST)
+
+		self.margin_pixels_left = img.shape[1] - self.CFG.COMMON.SHAPE[1] - 1
+		self.margin_pixels_top  = img.shape[0] - self.CFG.COMMON.SHAPE[0] - 1
+
+		## Crop to target size - horizonstally
+		if margin_left:
+			img = img[:, self.margin_pixels_left+1:]
+		else:
+			img = img[:, :self.CFG.COMMON.SHAPE[1] ]
+
+		## Crop to target size - vertically
+		if margin_top:
+			img = img[self.margin_pixels_top:, :]
+		else:
+			img = img[:self.CFG.COMMON.SHAPE[0] , :]
+
+		return self._draw_frame_info(frame_id, step_idx, img) if draw_label else img
 
 
 	def show(self, draw_label: bool = True, frame_id: int = 0) -> Tuple[bool, ImagesToSave]:
@@ -124,7 +252,7 @@ class ProcessingVisualizer():
 			i = 0
 			while True:
 				## Get image with label (if specified) or raw image if label is turned off
-				img = self._draw_frame_info(frame_id, i) if draw_label else self.images[i]
+				img = self._get_image(draw_label, frame_id, i)
 
 				## Show the image on the window
 				cv2.imshow(self.CFG.WINDOW_NAME, img)
@@ -135,13 +263,28 @@ class ProcessingVisualizer():
 				## Move the displayed processing forward one step
 				if key == ord(self.CFG.KEYS.CONTINUE):
 					i = min(i+1, len(self.images) - 1)
+					self.zoom = 1
 
 				## Move the displayed processing backwards one step
 				elif key == ord(self.CFG.KEYS.BACK):
 					i = max(i-1, 0)
+					self.zoom = 1
+
+				## Zoom in on current mouse position
+				elif key == ord(self.CFG.KEYS.ZOOM_IN):
+					self.zoom = min(self.zoom + 1, self.CFG.MAX_ZOOM)
+
+				## Zoom out of current mouse position
+				elif key == ord(self.CFG.KEYS.ZOOM_OUT):
+					self.zoom = max(self.zoom - 1, 1)
+
+				## Reset zoom to 1x
+				elif key == ord(self.CFG.KEYS.RESTORE):
+					self.zoom = 1
 
 				## Exit out of inspect mode
 				elif key == ord(self.CFG.KEYS.INSPECT):
+					self.zoom = 1
 					self.inspect_mode = False
 					break
 

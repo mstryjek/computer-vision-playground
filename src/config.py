@@ -7,7 +7,7 @@ from __future__ import annotations ## DO NOT REMOVE, allows for cross-types anno
 import yaml
 import glob
 
-from typing import Dict, Union, Tuple, List
+from typing import Dict, Union, Tuple, List, Optional
 
 
 def find_cfg_file_path() -> Union[str, None]:
@@ -42,7 +42,7 @@ class Config(dict):
 		self._add_common_to_subdicts(common)
 
 
-	def _add_common_to_subdicts(self, common: Union[Config, None]) -> None:
+	def _add_common_to_subdicts(self, common: Optional[Config]) -> None:
 		"""
 		Add the `COMMON` config subdict to all direct subdicts of the current subdict.
 		This should be done after key, value loading in `__init__()`, the `COMMON` config would otherwise
