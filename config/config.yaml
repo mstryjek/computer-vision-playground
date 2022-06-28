@@ -20,7 +20,7 @@ VISUALIZATION:              ## Config for image visualizer
     RESTORE: 'r'            ## Key to press to reset zoom state to 1x
     ZOOM_IN: '='            ## Key to press to increase zoom by 1x
     ZOOM_OUT: '-'           ## Key to press to decrease zoom by 1x
-  MAX_ZOOM: 5               ## Maximum zoom, as 1/fraction of image height (maximum of 5x is optimal) [uint]
+  MAX_ZOOM: 30              ## Maximum zoom, as 1/fraction of image height [uint]
   COLOR: [255,213,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
   ALPHA: 0.60               ## Opacity factor for drawing [float]
   TEXT:

@@ -91,7 +91,8 @@ submit a PR!
 
 
 ## TODO
+- [ ] Add left mouse wheel dragging to move in zoom (inspect mode)
 - [ ] Add RGB pixel inspector to inspect mode (with pixel indices) (turn on/off by clicking right mouse button)
 - [ ] Add contour inspection to cursor inspection (area, min/max bounds, center position)
-- [ ] Add zoom in/out functions for better pixel inspection (also a reset key)
 - [ ] Add a slider for value tuning (e.g. threshold)
+- [X] Add zoom in/out functions for better pixel inspection (also a reset key)
