@@ -27,6 +27,7 @@ class ProcessingVisualizer():
 		self.display_pixel_label = False
 		self.margin_pixels_left = 0
 		self.margin_pixels_top = 0
+		self.FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
 	def __enter__(self):
@@ -94,7 +95,7 @@ class ProcessingVisualizer():
 		text = text + f' [{self.zoom}x]' if self.zoom > 1 else text
 
 		## Text size and total textbox size
-		(tw, th), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, 1)
+		(tw, th), baseline = cv2.getTextSize(text, self.FONT, self.CFG.TEXT.SCALE, 1)
 		textbox_size = (th+2*self.CFG.TEXT.MARGIN, tw+2*self.CFG.TEXT.MARGIN)
 
 		## Rectangle top-left corner, text bottom-left corner and image corner (rectangle bottom-right corner)
@@ -104,7 +105,7 @@ class ProcessingVisualizer():
 
 		## Draw rectangle and text on the image
 		draw_img = cv2.rectangle(draw_img, rect_org, corner, self.CFG.TEXT.BG_COLOR, -1)
-		draw_img = cv2.putText(draw_img, text, txt_org, cv2.FONT_HERSHEY_SIMPLEX, self.CFG.TEXT.SCALE, self.CFG.TEXT.COLOR, 1, cv2.LINE_AA)
+		draw_img = cv2.putText(draw_img, text, txt_org, self.FONT, self.CFG.TEXT.SCALE, self.CFG.TEXT.COLOR, 1, cv2.LINE_AA)
 
 		## Return an alpha-weighted composition of the original image and the image with the label
 		return cv2.addWeighted(draw_img, self.CFG.ALPHA, orig_img, 1.-self.CFG.ALPHA, 0)
@@ -199,6 +200,11 @@ class ProcessingVisualizer():
 		img = img[ymin:ymax, xmin:xmax]
 		img = cv2.resize(img, (0, 0), fx=self.zoom, fy=self.zoom, interpolation=cv2.INTER_NEAREST)
 
+		## Store values for inspected pixel recaulcation
+		self.orig_pixels_left = xmin
+		self.orig_pixels_top = ymin
+		self.is_margin_left = margin_left
+		self.is_margin_top = margin_top
 		self.margin_pixels_left = img.shape[1] - self.CFG.COMMON.SHAPE[1] - 1
 		self.margin_pixels_top  = img.shape[0] - self.CFG.COMMON.SHAPE[0] - 1
 
@@ -215,22 +221,54 @@ class ProcessingVisualizer():
 			img = img[:self.CFG.COMMON.SHAPE[0] , :]
 
 
-	def _get_inspected_pixel(self) -> Tuple[Union[np.ndarray, int], Tuple[int, int]]:
+	def _get_inspected_pixel(self, step: int) -> Tuple[Union[np.ndarray, int], Tuple[int, int]]:
 		"""
 		Get the value and original image indices of the inspected pixel.
 		Returns (pixel_value, (x, y)) in accordance with OpenCV axes.
 		"""
+		x, y = self.mouse_position.x, self.mouse_position.y
 		
+		## Remove non-full pixels when zoomed in
+		x -= self.margin_pixels_left if self.is_margin_left else 0
+		y -= self.margin_pixels_top if self.is_margin_top else 0
+
+		## Remap to original coordinates
+		x //= self.zoom
+		y //= self.zoom
+		x += self.orig_pixels_left
+		y += self.orig_pixels_top
+		x += 1 if self.is_margin_left else 0
+		y += 1 if self.is_margin_top else 0
+
+		return self.images[step][y, x], (x, y)
 
 
-	def _draw_pixel_label(self, img: np.ndarray) -> np.ndarray:
+	def _draw_pixel_label(self, orig_step: int, img: np.ndarray) -> np.ndarray:
 		"""
 		Draw the pixel inspection label (if enabled) on the image.
 		"""
 		if not self.display_pixel_label:
 			return img
 		
-		px, (x, y) = self._get_inspected_pixel()
+		px, (x, y) = self._get_inspected_pixel(orig_step)
+		px_str = ', '.join(str(px).split(' '))
+
+		## Construct label text
+		## Displayed in two lines for better readability
+		text_top = f'BGR: {px_str}'
+		text_bottom = f'X{x}, Y{y}'
+
+		## Bottom and top text line sizes
+		(w_top, h_top), _ = cv2.getTextSize(text_top, self.FONT, self.CFG.TEXT.SCALE, thickness=1)
+		(w_bottom, h_bottom), _ = cv2.getTextSize(text_bottom, self.FONT, self.CFG.TEXT.SCALE, thickness=1)
+
+		## Total label height and width
+		label_h = h_top + h_bottom + 2 * self.CFG.TEXT.MARGIN
+		label_w = max(w_top, w_bottom) + 2 * self.CFG.TEXT.MARGIN
+
+		## TODO Pick up here
+		## Draw label (using pixel color), add text color contrast, alpha-add images
+
 
 
 	def _get_image(self, draw_label: bool, frame_id: int, step_idx: int) -> np.ndarray:
