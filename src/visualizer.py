@@ -120,13 +120,13 @@ class ProcessingVisualizer():
 			return
 
 		## Update mouse position
-		if event in [cv2.EVENT_MOUSEMOVE, cv2.EVENT_RBUTTONDOWN]:
+		if event in [cv2.EVENT_MOUSEMOVE, cv2.EVENT_LBUTTONDOWN]:
 			self.mouse_position = PixelCoordinate(x, y)
 			if self.zoom == 1:
 				self.zoom_center = PixelCoordinate(x, y)
 
 		## Toggle pixel label on right button click
-		if event == cv2.EVENT_RBUTTONDOWN:
+		if event == cv2.EVENT_LBUTTONDOWN:
 			self.display_pixel_label = not self.display_pixel_label
 
 
@@ -227,7 +227,7 @@ class ProcessingVisualizer():
 		Returns (pixel_value, (x, y)) in accordance with OpenCV axes.
 		"""
 		x, y = self.mouse_position.x, self.mouse_position.y
-		
+
 		## Remove non-full pixels when zoomed in
 		x -= self.margin_pixels_left if self.is_margin_left else 0
 		y -= self.margin_pixels_top if self.is_margin_top else 0
@@ -249,25 +249,51 @@ class ProcessingVisualizer():
 		"""
 		if not self.display_pixel_label:
 			return img
-		
+
+		draw_img = img.copy()
+
 		px, (x, y) = self._get_inspected_pixel(orig_step)
 		px_str = ', '.join(str(px).split(' '))
 
 		## Construct label text
 		## Displayed in two lines for better readability
 		text_top = f'BGR: {px_str}'
-		text_bottom = f'X{x}, Y{y}'
+		text_bottom = f'X{x} Y{y}'
 
 		## Bottom and top text line sizes
 		(w_top, h_top), _ = cv2.getTextSize(text_top, self.FONT, self.CFG.TEXT.SCALE, thickness=1)
 		(w_bottom, h_bottom), _ = cv2.getTextSize(text_bottom, self.FONT, self.CFG.TEXT.SCALE, thickness=1)
 
 		## Total label height and width
-		label_h = h_top + h_bottom + 2 * self.CFG.TEXT.MARGIN
-		label_w = max(w_top, w_bottom) + 2 * self.CFG.TEXT.MARGIN
+		label_h = h_top + h_bottom + 2 * self.CFG.TEXT.MARGIN + 2 * self.CFG.PIXEL_LABEL_BORDER
+		label_w = max(w_top, w_bottom) + 2 * self.CFG.TEXT.MARGIN + 2 * self.CFG.PIXEL_LABEL_BORDER
 
-		## TODO Pick up here
-		## Draw label (using pixel color), add text color contrast, alpha-add images
+		## Draw text in a contrasting color
+		text_clr = (255, 255, 255) if np.mean(px) < self.CFG.TEXT.CONTRAST_THRESH else (0, 0, 0)
+
+		## Top left corner position of entire label (including margins and borders)
+
+		## Check that drawing label to the right does not go out of image bounds, draw to the left if it does
+		label_x_max_right = self.mouse_position.x + self.CFG.PIXEL_LABEL_OFFSET + label_w
+		label_x = label_x_max_right - label_w if label_x_max_right < self.CFG.COMMON.SHAPE[1] else self.mouse_position.x - (self.CFG.PIXEL_LABEL_OFFSET + label_w)
+
+		## Check that drawing label to the bottom does not go out of image bounds, draw to the top if it does
+		label_y_max_bottom = self.mouse_position.y + self.CFG.PIXEL_LABEL_OFFSET + label_h
+		label_y = label_y_max_bottom - label_h if label_y_max_bottom < self.CFG.COMMON.SHAPE[0] else self.mouse_position.x - (self.CFG.PIXEL_LABEL_OFFSET + label_h)
+
+		## Add borders (underlying rectangle)
+		draw_img = cv2.rectangle(draw_img, (label_x, label_y), (label_x + label_w, label_y + label_h), text_clr, thickness=-1)
+
+		## Add text backgound
+		bg_clr = (px, px, px) if isinstance(px, int) else tuple(px)
+		draw_img = cv2.rectangle(draw_img, (label_x + self.CFG.PIXEL_LABEL_BORDER, label_y + self.CFG.PIXEL_LABEL_BORDER), (label_x + label_w - self.CFG.PIXEL_LABEL_OFFSET, label_y + label_h - self.CFG.PIXEL_LABEL_OFFSET), bg_clr, thickness=-1)
+
+		## Add top and bottom text
+		draw_img = cv2.putText(draw_img, text_top, (label_x + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN, label_y + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN + h_top), self.FONT, self.CFG.TEXT.SCALE, text_clr, thickness=1, lineType=cv2.LINE_AA)
+		draw_img = cv2.putText(draw_img, text_bottom, (label_x + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN, label_y + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN + h_top + h_bottom), self.FONT, self.CFG.TEXT.SCALE, text_clr, thickness=1, lineType=cv2.LINE_AA)
+
+		## Alpha-add images
+		return cv2.addWeighted(draw_img, self.CFG.ALPHA, img, 1.-self.CFG.ALPHA, 0)
 
 
 
@@ -290,7 +316,7 @@ class ProcessingVisualizer():
 		img = self._zoom_image(img)
 
 		## Draw pixel inspection label
-		img = self._draw_pixel_label(img)
+		img = self._draw_pixel_label(step_idx, img)
 
 		return self._draw_frame_info(frame_id, step_idx, img) if draw_label else img
 

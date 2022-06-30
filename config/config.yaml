@@ -23,11 +23,14 @@ VISUALIZATION:              ## Config for image visualizer
   MAX_ZOOM: 30              ## Maximum zoom, as 1/fraction of image height [uint]
   COLOR: [255,213,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
   ALPHA: 0.60               ## Opacity factor for drawing [float]
+  PIXEL_LABEL_OFFSET: 10    ## Offset (both x and y) of pixel label from mouse cursor, in px [uint]
+  PIXEL_LABEL_BORDER: 2     ## Border thickness (both x and y) for the pixel label, to ensure better contrast with surrondings, given in pixels [uint]
   TEXT:
     MARGIN: 4               ## Margin for items in textbox, in px [uint]
     SCALE: 0.5              ## Scale of text for textbox [float]
     COLOR: [255, 255, 255]  ## Text color, in BGR [Tuple[uint8, uint8, uint8]]
     BG_COLOR: [130,130,130] ## Textbox background color, in BGR [Tuple[uint8, uint8, uint8]]
+    CONTRAST_THRESH: 150    ## Value below which label text will be white, above => black [uint]
 
 PROCESSING:                 ## Config for image processing
   BLOB_AREA_THRESH: 20      ## Minimum blob area to be kept as valid, in pixels [uint]
