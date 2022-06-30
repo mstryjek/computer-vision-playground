@@ -91,9 +91,11 @@ submit a PR!
 
 
 ## TODO
-- [ ] Add left mouse wheel dragging to move in zoom (inspect mode)
 - [ ] Add RGB pixel inspector to inspect mode (with pixel indices) (turn on/off by clicking right mouse button)
-- [ ] Add contour inspection to cursor inspection (area, min/max bounds, center position)
+- [ ] Fix label near bottom left corner
+- [ ] Fix image out of bounds mouse position
+- [ ] Fix label being blue on white background
+- [ ] Tune contrast threshold
 - [ ] Add a slider for value tuning (e.g. threshold)
 - [ ] README - zoom functionality, zoom scrolling, pixel value inspector
 - [X] Add zoom in/out functions for better pixel inspection (also a reset key)

@@ -27,6 +27,10 @@ class ProcessingVisualizer():
 		self.display_pixel_label = False
 		self.margin_pixels_left = 0
 		self.margin_pixels_top = 0
+		self.orig_pixels_left = 0
+		self.orig_pixels_top = 0
+		self.is_margin_left = False
+		self.is_margin_top = False
 		self.FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
@@ -120,7 +124,7 @@ class ProcessingVisualizer():
 			return
 
 		## Update mouse position
-		if event in [cv2.EVENT_MOUSEMOVE, cv2.EVENT_LBUTTONDOWN]:
+		if event == cv2.EVENT_MOUSEMOVE:
 			self.mouse_position = PixelCoordinate(x, y)
 			if self.zoom == 1:
 				self.zoom_center = PixelCoordinate(x, y)
@@ -193,6 +197,9 @@ class ProcessingVisualizer():
 		"""
 		Zoom an image with the current zoom factor.
 		"""
+		if self.zoom == 1:
+			return img
+
 		## Bound to crop from the original image
 		(xmin, xmax), (ymin, ymax), (margin_left, margin_top) = self._get_crop_bounds()
 
@@ -220,6 +227,8 @@ class ProcessingVisualizer():
 		else:
 			img = img[:self.CFG.COMMON.SHAPE[0] , :]
 
+		return img
+
 
 	def _get_inspected_pixel(self, step: int) -> Tuple[Union[np.ndarray, int], Tuple[int, int]]:
 		"""
@@ -240,6 +249,7 @@ class ProcessingVisualizer():
 		x += 1 if self.is_margin_left else 0
 		y += 1 if self.is_margin_top else 0
 
+		## FIXME out of bounds error
 		return self.images[step][y, x], (x, y)
 
 
@@ -285,8 +295,8 @@ class ProcessingVisualizer():
 		draw_img = cv2.rectangle(draw_img, (label_x, label_y), (label_x + label_w, label_y + label_h), text_clr, thickness=-1)
 
 		## Add text backgound
-		bg_clr = (px, px, px) if isinstance(px, int) else tuple(px)
-		draw_img = cv2.rectangle(draw_img, (label_x + self.CFG.PIXEL_LABEL_BORDER, label_y + self.CFG.PIXEL_LABEL_BORDER), (label_x + label_w - self.CFG.PIXEL_LABEL_OFFSET, label_y + label_h - self.CFG.PIXEL_LABEL_OFFSET), bg_clr, thickness=-1)
+		bg_clr = px if isinstance(px, int) else int(np.mean(px))
+		draw_img = cv2.rectangle(draw_img, (label_x + self.CFG.PIXEL_LABEL_BORDER, label_y + self.CFG.PIXEL_LABEL_BORDER), (label_x + label_w - self.CFG.PIXEL_LABEL_BORDER, label_y + label_h - self.CFG.PIXEL_LABEL_BORDER), bg_clr, thickness=-1)
 
 		## Add top and bottom text
 		draw_img = cv2.putText(draw_img, text_top, (label_x + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN, label_y + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN + h_top), self.FONT, self.CFG.TEXT.SCALE, text_clr, thickness=1, lineType=cv2.LINE_AA)
@@ -303,7 +313,8 @@ class ProcessingVisualizer():
 		"""
 		## Return drawn image if no zoom
 		if self.zoom == 1:
-			return self._draw_frame_info(frame_id, step_idx) if draw_label else self.images[step_idx]
+			img = self._draw_frame_info(frame_id, step_idx) if draw_label else self.images[step_idx]
+			return self._draw_pixel_label(step_idx, img) if self.display_pixel_label else img
 
 		## Safegaurd against uninitialized mouse position - zoom into center
 		if not self.zoom_center:
@@ -351,7 +362,7 @@ class ProcessingVisualizer():
 				cv2.imshow(self.CFG.WINDOW_NAME, img)
 
 				## Get user input to interact with the program
-				key = cv2.waitKey(0)
+				key = cv2.waitKey(1)
 
 				## Move the displayed processing forward one step
 				if key == ord(self.CFG.KEYS.CONTINUE):
@@ -362,7 +373,7 @@ class ProcessingVisualizer():
 				elif key == ord(self.CFG.KEYS.BACK):
 					i = max(i-1, 0)
 					self.zoom = 1
-
+				
 				## Zoom in on current mouse position
 				elif key == ord(self.CFG.KEYS.ZOOM_IN):
 					self.zoom = min(self.zoom + 1, self.CFG.MAX_ZOOM)
