@@ -92,10 +92,11 @@ submit a PR!
 
 ## TODO
 - [ ] Add RGB pixel inspector to inspect mode (with pixel indices) (turn on/off by clicking right mouse button)
-- [ ] Fix label near bottom left corner
+- [ ] Add grayscale inspector with contour info
 - [ ] Fix image out of bounds mouse position
-- [ ] Fix label being blue on white background
 - [ ] Tune contrast threshold
 - [ ] Add a slider for value tuning (e.g. threshold)
 - [ ] README - zoom functionality, zoom scrolling, pixel value inspector
+- [X] Fix label being blue on white background
+- [X] Fix label near bottom left corner
 - [X] Add zoom in/out functions for better pixel inspection (also a reset key)
