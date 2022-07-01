@@ -418,7 +418,7 @@ class ProcessingVisualizer():
 		## Displayed in two lines for better readability
 		if len(img.shape) == 3:
 			text_top = f'BGR={px_str}'
-			text_bottom = f'X{x} Y{y}'
+			text_bottom = f'X={x} Y={y}'
 		else:
 			if is_binary_image(self.images[orig_step]):
 				ret = self._get_contour_info(orig_step, x=x, y=y)
@@ -426,14 +426,14 @@ class ProcessingVisualizer():
 				if ret is not None:
 					(cx, cy), (xmin, ymin), (xmax, ymax), area = ret
 					draw_img = self._draw_contour_bbox(draw_img, xmin, xmax, ymin, ymax)
-					text_top = f'CX{cx} CY{cy} A{area}'
-					text_bottom = f'V={px_str} X{x} Y{y}'
+					text_top = f'CX={cx} CY={cy} A={area}'
+					text_bottom = f'V={px_str} X={x} Y={y}'
 				else:
 					text_top = f'V={px_str}'
-					text_bottom = f'X{x} Y{y}'
+					text_bottom = f'X={x} Y={y}'
 			else:
 				text_top = f'V={px_str}'
-				text_bottom = f'X{x} Y{y}'
+				text_bottom = f'X={x} Y={y}'
 
 
 		## Bottom and top text line sizes
@@ -567,8 +567,8 @@ class ProcessingVisualizer():
 				## Take a screenshot of the current step being displayed (save it to an image file)
 				## Note that even if the label is being displayed, the raw image (without the label) will be saved
 				elif key == ord(self.CFG.KEYS.SCREENSHOT):
-					images_to_save.add(self.images[i], i, self.step_names[i])
-					# images_to_save.add(img, i, self.step_names[i]) ## Switch this line with the one above to save screenshots with visualizations
+					# images_to_save.add(self.images[i], i, self.step_names[i])
+					images_to_save.add(img, i, self.step_names[i]) ## Switch this line with the one above to save screenshots with visualizations
 
 		## Show the last image (most likely the final processing step) given to the visualizer
 		else:
