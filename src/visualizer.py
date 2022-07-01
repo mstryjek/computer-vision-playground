@@ -441,7 +441,7 @@ class ProcessingVisualizer():
 		(w_bottom, h_bottom), _ = cv2.getTextSize(text_bottom, self.FONT, self.CFG.TEXT.SCALE, thickness=1)
 
 		## Total label height and width
-		label_h = h_top + h_bottom + 2 * self.CFG.TEXT.MARGIN + 2 * self.CFG.PIXEL_LABEL_BORDER
+		label_h = h_top + h_bottom + 2 * self.CFG.TEXT.MARGIN + 2 * self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.SPACING
 		label_w = max(w_top, w_bottom) + 2 * self.CFG.TEXT.MARGIN + 2 * self.CFG.PIXEL_LABEL_BORDER
 
 		## Draw text in a contrasting color
@@ -466,7 +466,7 @@ class ProcessingVisualizer():
 
 		## Add top and bottom text
 		draw_img = cv2.putText(draw_img, text_top, (label_x + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN, label_y + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN + h_top), self.FONT, self.CFG.TEXT.SCALE, text_clr, thickness=1, lineType=cv2.LINE_AA)
-		draw_img = cv2.putText(draw_img, text_bottom, (label_x + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN, label_y + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN + h_top + h_bottom), self.FONT, self.CFG.TEXT.SCALE, text_clr, thickness=1, lineType=cv2.LINE_AA)
+		draw_img = cv2.putText(draw_img, text_bottom, (label_x + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN, label_y + self.CFG.PIXEL_LABEL_BORDER + self.CFG.TEXT.MARGIN + h_top + h_bottom + self.CFG.TEXT.SPACING), self.FONT, self.CFG.TEXT.SCALE, text_clr, thickness=1, lineType=cv2.LINE_AA)
 
 		## Alpha-add images
 		return cv2.addWeighted(draw_img, self.CFG.ALPHA, img, 1.-self.CFG.ALPHA, 0)

@@ -36,6 +36,18 @@ python src/main.py
 ```
 You can stop at any frame by pressing `c`. You can then jump forwards and back between each step of processing with `a` (one step back) and `d` (one step forward). At any step, you can press `s` in order to save that step separately to an image file. Press `c` again to return to resume, and press `q` at any time to exit. Note that you can change the key mappings to whatever you want in [the config file](config/config.yaml). You can also play around with the config values to get a different result.
 
+You can zoom into the image, by using `=` (zoom in) and `-` (zoom out):
+<p align="center">
+  <img src="resources/zoom.png"/>
+</p>
+
+By clicking your left mouse button, you can toggle pixel inspection. For color images, this will tell you the BGR value of the pixel your cursor is over, as well as its X and Y indices:
+<p align="center">
+  <img src="resources/px_label.png" />
+</p>
+
+
+
 ### Implementing your own algorithms
 You can write your own algorithm by writing the processing steps in [`main.py`](src/main.py). Adding the line 
 ```py
