@@ -567,8 +567,8 @@ class ProcessingVisualizer():
 				## Take a screenshot of the current step being displayed (save it to an image file)
 				## Note that even if the label is being displayed, the raw image (without the label) will be saved
 				elif key == ord(self.CFG.KEYS.SCREENSHOT):
-					# images_to_save.add(self.images[i], i, self.step_names[i])
-					images_to_save.add(img, i, self.step_names[i]) ## Switch this line with the one above to save screenshots with visualizations
+					images_to_save.add(self.images[i], i, self.step_names[i])
+					# images_to_save.add(img, i, self.step_names[i]) ## Switch this line with the one above to save screenshots with visualizations
 
 		## Show the last image (most likely the final processing step) given to the visualizer
 		else:

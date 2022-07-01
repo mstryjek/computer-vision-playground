@@ -51,7 +51,7 @@ def main() -> None:
 			## Save images - images from only one processing step should be saved, since `io` manages only
 			## one video output at a time. Most likely you'll want to create a video with the results of your
 			## algorithm nicely visualized on the original image
-			# io.save(drawn)
+			io.save(drawn)
 
 			done, images_to_save = vis.show(frame_id=frame_id)
 			io.save_screenshots(images_to_save) ## Save screenshots - processing steps marked with `s`
