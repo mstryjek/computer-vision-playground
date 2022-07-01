@@ -78,3 +78,38 @@ def to_kernel(ksize: Union[int, List[int], Tuple[int, int]]) -> Tuple[int, int]:
 		return ksize
 	else:
 		raise NotImplementedError('Utility function to_kernel() supports only ints, lists and tuples!')
+	
+
+def to_comma_separated_string(arr: Union[np.ndarray, int]) -> str:
+	"""
+	Convert a pixel value to a comma-separated string.
+	"""
+	if isinstance(arr, np.ndarray):
+		if len(arr) == 0:
+			return ''
+
+	elems = str(arr).split()
+	
+	## Safeguard against numpy array string representation inserting spaces before first element
+	if elems[0] in ['[', '(']:
+		paren = elems.pop(0)
+		elems[0] = paren + elems[0]
+	
+	## Same as above, just in case for the last element
+	if elems[-1] in [']', ')']:
+		paren = elems.pop()
+		elems[-1] = elems[-1] + paren
+	
+	return ','.join(elems)
+
+
+def is_binary_image(img: np.ndarray) -> bool:
+	"""
+	Check whether an image is binary (contains only fully white and fully black pixels).
+	Shorthand function.
+	"""
+	un = np.unique(img)
+	return np.array_equal(un, [0, 255])
+
+
+

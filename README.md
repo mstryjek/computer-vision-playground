@@ -34,7 +34,26 @@ To play around with the functionalities, simply run
 ```shell
 python src/main.py
 ```
-You can stop at any frame by pressing `c`. You can then jump forwards and back between each step of processing with `a` (one step back) and `d` (one step forward). At any step, you can press `s` in order to save that step separately to an image file. Press `c` again to return to resume, and press `q` at any time to exit. Note that you can change the key mappings to whatever you want in [the config file](config/config.yaml). You can also play around with the config values to get a different result.
+You can stop at any frame by pressing `c`. You can then jump forwards and back between each step of processing with `a` (one step back) and `d` (one step forward). At any step, you can press `s` in order to save that step separately to an image file. Press `c` again to return to resume, and press `q` at any time to exit.
+
+You can zoom into the image, by using `=` (zoom in) and `-` (zoom out):
+<p align="center">
+  <img src="resources/zoom.png"/>
+</p>
+
+By clicking your left mouse button, you can toggle pixel inspection. For color images, this will tell you the BGR value of the pixel your cursor is over, as well as its X and Y indices:
+<p align="center">
+  <img src="resources/px_label.png" />
+</p>
+
+While inspecting a binary image (for example after thresholding), you can also view the information about the contour that you hover over:
+<p align="center">
+  <img src="resources/contour.png" />
+</p>
+
+You're given the maximum and minimum X and Y values of a contour (gray numbers on image). The center of mass of a contour (`CX=` and `CY=` on the label) and its area (`A=` on the label) will also be displayed. (**NOTE**: The area is calculated using `cv2.contourArea()`, which uses Green's formula to calculate the area. This means that most of the time, the displayed contour area and the actual count of its pixels will not be exactly the same.)
+
+Note that you can change the key mappings to whatever you want in [the config file](config/config.yaml). You can also play around with the config values to get a different result.
 
 ### Implementing your own algorithms
 You can write your own algorithm by writing the processing steps in [`main.py`](src/main.py). Adding the line 
@@ -91,8 +110,5 @@ submit a PR!
 
 
 ## TODO
-- [ ] Add left mouse wheel dragging to move in zoom (inspect mode)
-- [ ] Add RGB pixel inspector to inspect mode (with pixel indices) (turn on/off by clicking right mouse button)
-- [ ] Add contour inspection to cursor inspection (area, min/max bounds, center position)
 - [ ] Add a slider for value tuning (e.g. threshold)
-- [X] Add zoom in/out functions for better pixel inspection (also a reset key)
+- [ ] Slider README info
