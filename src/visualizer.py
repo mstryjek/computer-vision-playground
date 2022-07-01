@@ -58,7 +58,7 @@ class ProcessingVisualizer():
 		self.step_names.append(step_name)
 
 
-	def draw_mask(self, img: np.ndarray, mask: np.ndarray) -> np.ndarray:
+	def draw_mask(self, img: np.ndarray, mask: np.ndarray, alpha: Optional[float] = None, color: Optional[Tuple[int, int, int]] = None) -> np.ndarray:
 		"""
 		Utility function, not part of the system but you can use it if your code produced a single-channel
 		mask that you'd like to visualize on an image.
@@ -74,14 +74,17 @@ class ProcessingVisualizer():
 		assert img.shape[:2] == mask.shape[:2], f'Both images must have the same shape, but image\
 			has shape {img.shape[:2]} and mask has shape {mask.shape[:2]}'
 
+		alpha = alpha if alpha is not None else self.CFG.ALPHA
+		color = color if color is not None else self.CFG.COLOR
+
 		## Copy of the image to add with alpha weight later
 		ret = img.copy()
 
 		## Draw full opacity color on the copy
-		ret[mask != 0] = self.CFG.COLOR
+		ret[mask != 0] = color
 
 		## Return the mask drawn on the image with the given alpha
-		return cv2.addWeighted(ret, self.CFG.ALPHA, img, 1.-self.CFG.ALPHA, 0)
+		return cv2.addWeighted(ret, alpha, img, 1.-alpha, 0)
 
 
 	def _draw_frame_info(self, frame_id: int, step: int, img: Optional[np.ndarray] = None) -> np.ndarray:
@@ -139,7 +142,7 @@ class ProcessingVisualizer():
 		Get crop bounds for the zoomed part of the image. Returns ((xmin, xmax), (ymin, ymax), (margin_left, margin_top))
 		in accordance with OpenCV axes.
 		"""
-		##
+		## Zoomed image portion total height and width (will be clipped slightly to target shape)
 		zoomed_h = ceil(self.CFG.COMMON.SHAPE[0] / self.zoom)
 		zoomed_w = ceil(self.CFG.COMMON.SHAPE[1] / self.zoom)
 
@@ -251,6 +254,11 @@ class ProcessingVisualizer():
 		x += 1
 		y += 1
 
+		## HACK Clipping safeguard
+		x = max(min(x, self.CFG.COMMON.SHAPE[1]-1), 0)
+		y = max(min(y, self.CFG.COMMON.SHAPE[0]-1), 0)
+
+
 		return self.images[step][y, x], (x, y)
 
 
@@ -294,6 +302,104 @@ class ProcessingVisualizer():
 		"""
 		Draw the bounding box of a contour on the zoomed in image.
 		"""
+		## Store original coordinate values in order to draw text onto the image later
+		xmin_orig = int(xmin)
+		xmax_orig = int(xmax)
+		ymin_orig = int(ymin)
+		ymax_orig = int(ymax)
+
+		## Transform variables into local coordinates (zoomed image)
+		## Ensure values are as close to contour border as possible without overlap
+		if self.zoom > 1:
+			xmin = xmin - self.orig_pixels_left - 2
+			xmax = xmax - self.orig_pixels_left
+			ymin = ymin - self.orig_pixels_top - 2
+			ymax = ymax - self.orig_pixels_top
+
+			xmin *= self.zoom
+			xmax *= self.zoom
+			ymin *= self.zoom
+			ymax *= self.zoom
+
+			xmin += self.margin_pixels_left if self.is_margin_left else 0
+			xmax += self.margin_pixels_left if self.is_margin_left else 0
+			ymin += self.margin_pixels_top if self.is_margin_top else 0
+			ymax += self.margin_pixels_top if self.is_margin_top else 0
+
+			xmin += self.zoom - 1
+			ymin += self.zoom - 1
+
+		## Draw lines on the image
+		clr = (self.CFG.BOUNDING_BOX_COLOR,) * 3
+		img = cv2.line(img, (xmin, 0), (xmin, self.CFG.COMMON.SHAPE[0]-1), clr, thickness=1)
+		img = cv2.line(img, (xmax, 0), (xmax, self.CFG.COMMON.SHAPE[0]-1), clr, thickness=1)
+		img = cv2.line(img, (0, ymin), (self.CFG.COMMON.SHAPE[1]-1, ymin), clr, thickness=1)
+		img = cv2.line(img, (0, ymax), (self.CFG.COMMON.SHAPE[1]-1, ymax), clr, thickness=1)
+
+		## Draw x/y min/max int values on lines
+		img = self._draw_centered_text(img, str(ymin_orig), (xmin+xmax)/2, ymin - self.CFG.TEXT.MARGIN, above=True,  color=clr, corr=2*self.CFG.TEXT.MARGIN)
+		img = self._draw_centered_text(img, str(ymax_orig), (xmin+xmax)/2, ymax + self.CFG.TEXT.MARGIN, above=False, color=clr, corr=2*self.CFG.TEXT.MARGIN)
+		img = self._draw_centered_text(img, str(xmin_orig), xmin - self.CFG.TEXT.MARGIN, (ymin+ymax)/2, left=True,   color=clr, corr=2*self.CFG.TEXT.MARGIN)
+		img = self._draw_centered_text(img, str(xmax_orig), xmax + self.CFG.TEXT.MARGIN, (ymin+ymax)/2, left=False,  color=clr, corr=2*self.CFG.TEXT.MARGIN)
+
+		return img
+
+
+	def _draw_centered_text(self, img: np.ndarray, text: str, cx: int, cy: int, corr: int = 0, above: Optional[bool] = None, left: Optional[bool] = None, color: Optional[Tuple[int, int, int]] = None) -> np.ndarray:
+		"""
+		Draw centered text on the image. `cx`, `cy` are coordinates of one of the text's bounding box's sides in accordance with OpenCV axes.
+		If `above` is `True`, cy denotes coordinate of the text bottom, otherwise it is the text top.
+		If `above` is `None`, this means that the text is to be horizontally centered, and cy is already the text's vertical center.
+		If `left` is `True`, cx denotes the position of the text right, otherwise the text's left.
+		If `left` is `None`, this means that the text is to be vertically centered, and cx is already the text's horizontal center.
+		Note that `left` and `above` can neither both be boolean at the same time, nor both be `None` at the same time.
+		`corr` is correction factor in case the `above` or `left` arguments have to be overloaded to prevent the text going out of the image.
+		"""
+		clr = color if color is not None else self.CFG.TEXT.COLOR
+
+		if left is not None and above is not None:
+			raise ValueError('Either left, above or both must be None!')
+
+		(text_w, text_h), _ = cv2.getTextSize(text, self.FONT, self.CFG.TEXT.SCALE, thickness=1)
+
+		## Text bottom left coordinates
+		org_x, org_y = None, None
+
+		## ================================ TODO Safeguards against text going out of bounds =================
+
+		## `left` is bool - cy means text's vertical center
+		if left is not None:
+			## Ensure text is always drawn on the image
+			if left and cx - text_w <= 0:
+				left = False
+				cx += corr
+			elif not left and cx + text_w >= self.CFG.COMMON.SHAPE[1]:
+				left = True
+				cx -= corr
+
+			if left:
+				org_x = cx - text_w
+			else:
+				org_x = cx
+			org_y = cy + text_h / 2
+
+		## `above` is bool - cx mean text's horizontal center
+		elif above is not None:
+			## Guard against the text going out of the image
+			if above and cy - text_h <= 0:
+				above = False
+				cy += corr
+			elif not above and cy + text_h >= self.CFG.COMMON.SHAPE[0]:
+				above = True
+				cy -= corr
+
+			if above:
+				org_y = cy
+			else:
+				org_y = cy + text_h
+			org_x = cx - text_w / 2
+
+		return cv2.putText(img, text, (int(org_x), int(org_y)), self.FONT, self.CFG.TEXT.SCALE, clr, thickness=1, lineType=cv2.LINE_AA)
 
 
 	def _draw_pixel_label(self, orig_step: int, img: np.ndarray) -> np.ndarray:
@@ -319,7 +425,7 @@ class ProcessingVisualizer():
 				## Extra safeguard just in case, in order to avoid unpacking errors
 				if ret is not None:
 					(cx, cy), (xmin, ymin), (xmax, ymax), area = ret
-					# draw_img = self._draw_contour_bbox(draw_img, xmin, xmax, ymin, ymax)
+					draw_img = self._draw_contour_bbox(draw_img, xmin, xmax, ymin, ymax)
 					text_top = f'CX{cx} CY{cy} A{area}'
 					text_bottom = f'V={px_str} X{x} Y{y}'
 				else:

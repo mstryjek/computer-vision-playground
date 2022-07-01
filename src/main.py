@@ -43,7 +43,7 @@ def main() -> None:
 			cnt = proc.separate_largest_contour(morph)
 			vis.store(cnt, 'Filtered')
 
-			drawn = vis.draw_mask(img, cnt)
+			drawn = vis.draw_mask(img, cnt, alpha=0.6)
 			vis.store(drawn, 'Final')
 
 			## <<========================= END OF PROCESSING ==============================>>
