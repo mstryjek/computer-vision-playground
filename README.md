@@ -18,6 +18,30 @@ An OpenCV-based development & testing space for classical image processing algor
 </div>
 
 <!-- TOC here -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about">About</a>
+    </li>
+    <li>
+      <a href="#setup">Setup</a>
+    </li>
+    <li>
+      <a href="#getting-started">Getting started</a>
+      <ul>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#implementing-your-own-algorithms">Implementing your own algorithms</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#license">License</a>
+    </li>
+    <li>
+      <a href="#bugs-and-contributing">Bugs and contributing</a>
+    </li>
+  </ol>
+</details>
 
 ## About
 This is a relatively simple set of Python tools helping with development of classical image processing algorithms meant for continuous streams of images, such as videos or live camera streams. You can easily view each step of your image processing algorithm, as well as save each step individually or as a video file.
@@ -102,13 +126,6 @@ For algorithm development or testing, the only two files you should be modifying
 Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information. If you end up using this repo in a public project, I'd appreciated if you left a link to this repo in your code or in your README.md.
 
 
-## Bugs & contributing
+## Bugs and contributing
 If you find any bugs, or implement your own features that you'd like merged in the repo, make sure to
 submit a PR!
-
-
-
-
-## TODO
-- [ ] Add a slider for value tuning (e.g. threshold)
-- [ ] Slider README info
