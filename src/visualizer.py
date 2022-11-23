@@ -17,10 +17,10 @@ class ProcessingVisualizer():
 	"""
 	Class for visualizing images given to it. Has the capability of drawing text info on the images.
 	"""
-	def __init__(self, cfg: Config) -> None:
+	def __init__(self, cfg: Config, start_inspect: bool = False) -> None:
 		self.CFG = cfg
 		self.reset()
-		self.inspect_mode = False
+		self.inspect_mode = start_inspect
 		self.zoom = 1
 		self.mouse_position = PixelCoordinate()
 		self.zoom_center = PixelCoordinate()
@@ -32,7 +32,7 @@ class ProcessingVisualizer():
 		self.is_margin_left = False
 		self.is_margin_top = False
 		self.FONT = cv2.FONT_HERSHEY_SIMPLEX
-
+		self.wait_time = 0 if self.CFG.FRAME_BY_FRAME else 1
 
 	def __enter__(self):
 		"""Enter context and create widnow."""
@@ -97,7 +97,7 @@ class ProcessingVisualizer():
 		orig_img = self.images[step].copy() if img is None else img.copy()
 
 		## Bottom label text with current frame index, processing step number and name (if given), as well as zoom amount if more than 1
-		text = f'FRAME: {frame_id-1} | STEP {step+1}'
+		text = f'FRAME: {frame_id+1} | STEP {step+1}'
 		text = text + f' ({self.step_names[step].upper()})' if self.step_names[step] is not None else text
 		text = text + f' [{self.zoom}x]' if self.zoom > 1 else text
 
@@ -534,7 +534,7 @@ class ProcessingVisualizer():
 
 				## Move the displayed processing forward one step
 				if key == ord(self.CFG.KEYS.CONTINUE):
-					i = min(i+1, len(self.images) - 1)
+					i += 1
 					self.zoom = 1
 
 				## Move the displayed processing backwards one step
@@ -570,16 +570,22 @@ class ProcessingVisualizer():
 					images_to_save.add(self.images[i], i, self.step_names[i])
 					# images_to_save.add(img, i, self.step_names[i]) ## Switch this line with the one above to save screenshots with visualizations
 
+				if i == len(self.images):
+					return False, images_to_save
+
+				i = min(i, len(self.images) - 1)
+
 		## Show the last image (most likely the final processing step) given to the visualizer
 		else:
 			cv2.imshow(self.CFG.WINDOW_NAME, self.images[-1])
 
 			## Get user input
-			key = cv2.waitKey(1)
+			key = cv2.waitKey(self.wait_time)
 
 			## Enter into inspect mode if specified
 			if key == ord(self.CFG.KEYS.INSPECT):
 				self.inspect_mode = True
+				return self.show(draw_label, frame_id)
 
 			## Exit out of the program entirely
 			elif key == ord(self.CFG.KEYS.EXIT):

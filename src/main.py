@@ -10,9 +10,10 @@ def main() -> None:
 	cfg = Config.auto()
 	done = False
 
-	with ProcessingVisualizer(cfg.VISUALIZATION) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
+	with ProcessingVisualizer(cfg.VISUALIZATION, start_inspect=True) as vis, ImageIO(cfg.IO) as io, ImageProcessor(cfg.PROCESSING) as proc:
 		for frame_id, img in io.read_images():
-			vis.reset() ## Important - you should reset the images stored each loop iterations, otherwise you'll quickly run out of memory. Simple keep this line in
+
+			vis.reset() ## Important - you should reset the images stored each loop iterations, otherwise you'll quickly run out of memory. Simply keep this line in
 			vis.store(img, 'Original')
 
 			"""
@@ -24,34 +25,23 @@ def main() -> None:
 			Feel free to delete this comment after you've read through it.
 			"""
 			## <<======================= START OF PROCESSING ==============================>>
-
-			smoothed = proc.smooth(img)
-			vis.store(smoothed, 'Smoothed')
-
-			gray = proc.to_grayscale(smoothed)
+			gray = proc.to_grayscale(img)
 			vis.store(gray, 'Grayscale')
 
-			eq = proc.equalize(gray)
-			vis.store(eq, 'Equalized')
+			blurred = proc.smooth(gray)
+			vis.store(blurred, 'Blurrred')
 
-			thresh = proc.thresh(eq)
-			vis.store(thresh, 'Thresholded')
+			threshed = proc.otsu(blurred)
+			vis.store(threshed, 'Otsu')
 
-			morph = proc.dilate(thresh)
-			vis.store(morph, 'Dilated')
 
-			cnt = proc.separate_largest_contour(morph)
-			vis.store(cnt, 'Filtered')
-
-			drawn = vis.draw_mask(img, cnt, alpha=0.6)
-			vis.store(drawn, 'Final')
 
 			## <<========================= END OF PROCESSING ==============================>>
 
 			## Save images - images from only one processing step should be saved, since `io` manages only
 			## one video output at a time. Most likely you'll want to create a video with the results of your
 			## algorithm nicely visualized on the original image
-			io.save(drawn)
+			# io.save(drawn)
 
 			done, images_to_save = vis.show(frame_id=frame_id)
 			io.save_screenshots(images_to_save) ## Save screenshots - processing steps marked with `s`

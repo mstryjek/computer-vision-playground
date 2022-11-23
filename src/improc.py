@@ -122,6 +122,14 @@ class ImageProcessor():
 		return cv2.threshold(img, self.CFG.THRESHOLD, 255, cv2.THRESH_BINARY)[1]
 
 
+	def otsu(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Perform Otsu thresholding on a grayscale image.
+		"""
+		assert len(img.shape) == 2, 'Thresholding can only be performed on grayscale images!'
+
+		return cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+
 	def remove_small_blobs(self, img: np.ndarray) -> np.ndarray:
 		"""
 		Remove all blobs (contours) below a given surface area.

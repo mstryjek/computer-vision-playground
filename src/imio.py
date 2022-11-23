@@ -15,6 +15,7 @@ from typing import Iterable, Optional, Union, Tuple, Any
 
 from utils import ImagesToSave
 
+import glob
 
 class FPS():
 	"""
@@ -115,7 +116,7 @@ class ImageIO():
 		self.output_initialized = True
 
 
-	def read_images(self) -> Iterable[Tuple[int, Union[np.ndarray, None]]]:
+	def read_video(self) -> Iterable[Tuple[int, Union[np.ndarray, None]]]:
 		"""
 		Read in images consecutively from cap.
 		Note that this function can still return `None` (an empty image) since you may want to implement
@@ -132,6 +133,19 @@ class ImageIO():
 			self.cnt += 1
 
 			yield self.cnt, cv2.resize(frame, tuple(self.CFG.COMMON.SHAPE[::-1]))
+
+
+	def read_images(self) ->  Iterable[Tuple[int, Union[np.ndarray, None]]]:
+		all_images = []
+		for ext in self.IMAGE_FORMATS:
+			images = glob.glob(os.path.join(self.CFG.IMAGE_PATH, f'*.{ext}'))
+			all_images.extend(images)
+
+		for i, img in enumerate(all_images):
+			self.fps.sync()
+			self.cnt += 1
+
+			yield i, cv2.resize(cv2.imread(img), tuple(self.CFG.COMMON.SHAPE[::-1]))
 
 
 	def save(self, img: np.ndarray) -> None:

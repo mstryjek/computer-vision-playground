@@ -1,8 +1,9 @@
 COMMON:                     ## Common values that apply to all modules 
-  SHAPE: [354, 630]         ## Image shape (h, w) [uint, uint]
+  SHAPE: [600, 800]         ## Image shape (h, w) [uint, uint]
 
 IO:                         ## Config for image input/output
   CAPTURE: videos/cat.mp4   ## Camera index or video path [uint | str]
+  IMAGE_PATH: images        ## Path to images when processing image files only [str]
   SAVE_PATH: output         ## Path to save directory, either absolute or relative [str]
   SAVE_PREFIX: test_video   ## Prefix to add to base output video filename [str]
   VIDEO_SAVE_FORMAT: 'mp4'  ## Save format for stream writing, one of `ImageIO` video formats [str]
@@ -20,6 +21,7 @@ VISUALIZATION:              ## Config for image visualizer
     RESTORE: 'r'            ## Key to press to reset zoom state to 1x
     ZOOM_IN: '='            ## Key to press to increase zoom by 1x
     ZOOM_OUT: '-'           ## Key to press to decrease zoom by 1x
+  FRAME_BY_FRAME: True      ## Whether to go frame-by-frame when not in inspect mode
   MAX_ZOOM: 30              ## Maximum zoom, as 1/fraction of image height [uint]
   COLOR: [255,213,0]        ## Color to draw masks with, in BGR [Tuple[int, int, int]]
   ALPHA: 1.00               ## Opacity factor for drawing [float]
@@ -34,9 +36,10 @@ VISUALIZATION:              ## Config for image visualizer
     BG_COLOR: [130,130,130] ## Textbox background color, in BGR [Tuple[uint8, uint8, uint8]]
     CONTRAST_THRESH: 180    ## Value below which label text will be white, above => black [uint]
 
+
 PROCESSING:                 ## Config for image processing
   BLOB_AREA_THRESH: 20      ## Minimum blob area to be kept as valid, in pixels [uint]
-  BLUR_SIZE: 7              ## Blur kernel size for gaussian blurring [uint | Tuple[uint, uint]]
+  BLUR_SIZE: 3              ## Blur kernel size for gaussian blurring [uint | Tuple[uint, uint]]
   THRESHOLD: 160            ## Threshold value for binary thresholding [uint]
   EROSION:                  ## Arguments for erosion [Dict[str, uint | Tuple[uint, uint]]]
     KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
