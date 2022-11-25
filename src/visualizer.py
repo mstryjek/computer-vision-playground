@@ -10,7 +10,7 @@ from math import floor, ceil
 from config import Config
 from utils import ImagesToSave, PixelCoordinate, to_comma_separated_string, is_binary_image
 
-from typing import Tuple, Optional, Union, Any
+from typing import Tuple, List, Optional, Union, Any
 
 
 class ProcessingVisualizer():
@@ -85,6 +85,13 @@ class ProcessingVisualizer():
 
 		## Return the mask drawn on the image with the given alpha
 		return cv2.addWeighted(ret, alpha, img, 1.-alpha, 0)
+
+
+	def draw_bounding_contours(self, img: np.ndarray, cnts: List[np.ndarray]) -> np.ndarray:
+		"""
+		Draw contours on an image (contour edges only).
+		"""
+		return cv2.drawContours(img, cnts, -1, tuple(self.CFG.COLOR), 1, cv2.LINE_AA)
 
 
 	def _draw_frame_info(self, frame_id: int, step: int, img: Optional[np.ndarray] = None) -> np.ndarray:

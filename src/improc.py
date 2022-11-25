@@ -4,7 +4,7 @@ import cv2
 from config import Config
 from utils import to_kernel
 
-from typing import Any
+from typing import Any, List
 
 
 class ImageProcessor():
@@ -24,7 +24,7 @@ class ImageProcessor():
 		Enter context.
 		"""
 		return self
-	
+
 
 	def __exit__(self, exc_type: Any, exc_value: Any, exc_tb: Any) -> None:
 		pass
@@ -51,7 +51,7 @@ class ImageProcessor():
 
 	def smooth(self, img: np.ndarray) -> np.ndarray:
 		"""
-		Blur an image to reduce noise.		
+		Blur an image to reduce noise.
 		"""
 		kernel = to_kernel(self.CFG.BLUR_SIZE)
 		return cv2.GaussianBlur(img, kernel, 0)
@@ -130,6 +130,7 @@ class ImageProcessor():
 
 		return cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
+
 	def remove_small_blobs(self, img: np.ndarray) -> np.ndarray:
 		"""
 		Remove all blobs (contours) below a given surface area.
@@ -143,7 +144,7 @@ class ImageProcessor():
 
 		cnts, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 		cnts_valid = [cnt for cnt in cnts if cv2.contourArea(cnt) >= self.CFG.BLOB_AREA_THRESH]
-		
+
 		return cv2.drawContours(ret, cnts_valid, -1, (255, 255, 255), -1)
 
 
@@ -156,5 +157,33 @@ class ImageProcessor():
 
 		cnts, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 		cnt = max(cnts, key=cv2.contourArea)
-		
+
 		return cv2.drawContours(ret, [cnt], -1, (255, 255, 255), -1)
+
+
+	def get_largest_contours(self, img: np.ndarray, n: int) -> List[np.ndarray]:
+		"""
+		Return `n` largest contours (by contour area) in an image.
+		Expects a binary image.
+		"""
+		contours, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+		contours = sorted(contours, key=cv2.contourArea)
+
+		return contours[-n:]
+
+
+	def contour_bounding_rects(self, cnts: List[np.ndarray]) -> List[np.ndarray]:
+		"""
+		Convert contours to their min area rects, in drawable format.
+		"""
+		boxes = [cv2.minAreaRect(cnt) for cnt in cnts]
+		rects = [np.int0(cv2.boxPoints(box)) for box in boxes]
+
+		return rects
+
+
+	def gray_to_BGR(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Convert single-channel image to triple-channel image.
+		"""
+		return np.stack([img, img, img], axis=-1)

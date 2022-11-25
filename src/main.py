@@ -34,7 +34,10 @@ def main() -> None:
 			threshed = proc.otsu(blurred)
 			vis.store(threshed, 'Otsu')
 
-
+			contours = proc.get_largest_contours(threshed, 4)
+			boxes = proc.contour_bounding_rects(contours)
+			drawn = vis.draw_bounding_contours(threshed, boxes)
+			vis.store(drawn, 'Contours')
 
 			## <<========================= END OF PROCESSING ==============================>>
 
