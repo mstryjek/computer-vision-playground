@@ -39,6 +39,10 @@ def main() -> None:
 			drawn = vis.draw_bounding_contours(threshed, boxes)
 			vis.store(drawn, 'Contours')
 
+			warped = proc.warp_contours(threshed, boxes)
+			for i, w in enumerate(warped):
+				vis.store(w, f'Warped ({i+1})')
+
 			## <<========================= END OF PROCESSING ==============================>>
 
 			## Save images - images from only one processing step should be saved, since `io` manages only

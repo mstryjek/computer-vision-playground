@@ -7,6 +7,9 @@ from utils import to_kernel
 from typing import Any, List
 
 
+from template import CardType, CardTemplate
+
+
 class ImageProcessor():
 	"""
 	Comprehensive image processing class, containing all logic & vision algorithms.
@@ -17,6 +20,13 @@ class ImageProcessor():
 	"""
 	def __init__(self, cfg: Config) -> None:
 		self.CFG = cfg
+		self.templates = [
+			CardTemplate('./templates/6.png',  CardType._6),
+			CardTemplate('./templates/8.png',  CardType._8),
+			CardTemplate('./templates/9.png',  CardType._9),
+			CardTemplate('./templates/p2.png', CardType.BLOCK),
+			CardTemplate('./templates/b.png',  CardType.PLUS_2)
+		]
 
 
 	def __enter__(self):
@@ -187,3 +197,77 @@ class ImageProcessor():
 		Convert single-channel image to triple-channel image.
 		"""
 		return np.stack([img, img, img], axis=-1)
+
+
+	def _euclidian_distance(self, pt1: np.ndarray, pt2: np.ndarray) -> float:
+		"""
+		Calculate the euclidian distance between two points.
+		"""
+		return np.sqrt(
+			np.sum(
+				(pt1 - pt2)**2.
+			)
+		)
+
+
+	def _assert_box_starts_topleft_clockwise_upright(self, box: np.ndarray) -> np.ndarray:
+		"""
+		Change box points order if it does not start at the top left point or the order of the points is not clockwise.
+		Also make sure longer edge of the rectangle is between vertices 1 and 2, as well as 3 and 0.
+		"""
+		mean = np.mean(box, axis=0)
+
+		out = [None]*4
+
+		for pt in box:
+			i = None
+			
+			if pt[0] <= mean[0] and pt[1] < mean[1]:
+				i = 0
+			elif pt[0] <= mean[0] and pt[1] >= mean[1]:
+				i = 3
+			elif pt[0] > mean[0] and pt[1] < mean[1]:
+				i = 1
+			elif pt[0] > mean[0] and pt[1] >= mean[1]:
+				i = 2
+			
+			out[i] = pt
+
+		out = np.array(out).astype(np.float32)
+		return out
+
+
+	def warp_contours(self, img: np.ndarray, boxes: List[np.ndarray]) -> List[np.ndarray]:
+		"""
+		Warp portions of the image given by bounding boxes. Return warped portions.
+		"""
+		ret = []
+
+		target_rect = np.array([
+			[0, 0],
+			[self.CFG.WARP.TARGET_SHAPE[1], 0],
+			self.CFG.WARP.TARGET_SHAPE[::-1],
+			[0, self.CFG.WARP.TARGET_SHAPE[0]],
+		]).astype(np.float32)
+
+		for box in boxes:
+
+			warp_mat = cv2.getPerspectiveTransform(
+				self._assert_box_starts_topleft_clockwise_upright(box), 
+				target_rect
+			)
+
+			warped = cv2.warpPerspective(img, warp_mat, tuple(self.CFG.WARP.TARGET_SHAPE)[::-1])
+
+			ret.append(warped)
+
+		return ret
+
+
+	def match_templates_to_image(self, img: np.ndarray) -> CardType:
+		"""
+		Match templates to image by convolution.
+		"""
+		pass
+
+

@@ -91,7 +91,7 @@ class ProcessingVisualizer():
 		"""
 		Draw contours on an image (contour edges only).
 		"""
-		return cv2.drawContours(img, cnts, -1, tuple(self.CFG.COLOR), 1, cv2.LINE_AA)
+		return cv2.drawContours(img.copy(), cnts, -1, tuple(self.CFG.COLOR), 1, cv2.LINE_AA)
 
 
 	def _draw_frame_info(self, frame_id: int, step: int, img: Optional[np.ndarray] = None) -> np.ndarray:

@@ -53,3 +53,5 @@ PROCESSING:                 ## Config for image processing
   OPENING:                  ## Arguments for opening [Dict[str, uint | Tuple[uint, uint]]]
     KERNEL_SIZE: 3          ## Kernel size to use for the morphology operation [uint | Tuple[uint, uint]]
     ITERATIONS: 1           ## Number of iterations for the morphology op [uint]
+  WARP:                     ## Arguments for warping [Dict[str, Tuple[uint, uint]]]
+    TARGET_SHAPE: [280,160] ## Taget shape to warp to (h, w) [Tuple[uint, uint]]
