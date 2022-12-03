@@ -26,35 +26,35 @@ def main() -> None:
 			"""
 			## <<======================= START OF PROCESSING ==============================>>
 			gray = proc.to_grayscale(img)
-			vis.store(gray, 'Grayscale')
+			# vis.store(gray, 'Grayscale')
 
 			blurred = proc.smooth(gray)
-			vis.store(blurred, 'Blurrred')
+			# vis.store(blurred, 'Blurrred')
 
 			threshed = proc.otsu(blurred)
-			vis.store(threshed, 'Otsu')
+			# vis.store(threshed, 'Otsu')
 
 			contours = proc.get_largest_contours(threshed, 4)
 			boxes = proc.contour_bounding_rects(contours)
 			drawn = vis.draw_bounding_contours(threshed, boxes)
-			vis.store(drawn, 'Contours')
+			# vis.store(drawn, 'Contours')
 
 			warped = proc.warp_contours(threshed, boxes)
+			warped = [proc.crop_image_center(w) for w in warped]
+			warped = [proc.remove_contours_touching_borders(w) for w in warped]
 			## TODO: Sort by closeness to warped image center, but rejecting anything that touches window 
 			## Choose 2 closes contours, keep only those & then dilate, to join them into one
 			## Eights have 2 holes & >1.5 aspect ratio, blocks are same but closer to square
 			## +2's have no holes
-			## sixes & nines are similar, except the hole is on the opposite side of the arithmetic center 
-			## from the baseline, which is defined as having more than half(?) of the width of the contour bbox
+			## 
+			## sixes & nines are similar, except the hole is on the opposite side of the arithmetic center from the bar
 			## ^^^ Try taking a couple top/bottom rows in case the symbol is slanted, should work
 			## ^^^ Width condition is not neccessary, just take the one that has more width
-			warped = [proc.dilate(w) for w in warped]
+			## ^^^ Connect sixes and nines with bars if neccessary
+			# warped = [proc.close(w) for w in warped]
 
-			matchlocs = [proc.match_templates_to_image(w) for w in warped]
-			for w, (m, loc, isud) in zip(warped, matchlocs):
-				vis.store(vis.draw_point(w, loc), f'{m}-{1 if isud else 0}')
-
-
+			for i, w in enumerate(warped):
+				vis.store(w, f'Warp {i+1}')
 
 
 

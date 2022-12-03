@@ -21,7 +21,7 @@ class ImageProcessor():
 	def __init__(self, cfg: Config) -> None:
 		self.CFG = cfg
 		self.templates = [
-			CardTemplate('./templates/6.png',  CardType._6),
+			CardTemplate('./templates/6.jpg',  CardType._6),
 			CardTemplate('./templates/8.png',  CardType._8),
 			CardTemplate('./templates/9.png',  CardType._9),
 			CardTemplate('./templates/b.png', CardType.BLOCK),
@@ -182,6 +182,42 @@ class ImageProcessor():
 		return contours[-n:]
 
 
+	def remove_contours_touching_borders(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Remove any contours touching any of the window borders.
+		"""
+		contours, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+		h, w = img.shape[:2]
+
+		contours = ([
+			c for c in contours
+			if not
+				(
+					np.any(c == 0)
+					or
+					np.any(c[:, :, 1] == h-1)
+					or
+					np.any(c[:, :, 0] == w-1)
+				)
+		])
+
+		return cv2.drawContours(np.zeros(img.shape, dtype=np.uint8), contours, -1, (255,), -1)
+
+
+	def crop_image_center(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Crop image to the center.
+		"""
+		h, w = img.shape[:2]
+		fac_x = int(w * self.CFG.CROP.PERC_X)
+		fac_y = int(h * self.CFG.CROP.PERC_Y)
+
+		return img[fac_y:h-fac_y, fac_x:w-fac_x]
+
+
+
+
 	def contour_bounding_rects(self, cnts: List[np.ndarray]) -> List[np.ndarray]:
 		"""
 		Convert contours to their min area rects, in drawable format.
@@ -221,7 +257,7 @@ class ImageProcessor():
 
 		for pt in box:
 			i = None
-			
+
 			if pt[0] <= mean[0] and pt[1] < mean[1]:
 				i = 0
 			elif pt[0] <= mean[0] and pt[1] >= mean[1]:
@@ -230,7 +266,7 @@ class ImageProcessor():
 				i = 1
 			elif pt[0] > mean[0] and pt[1] >= mean[1]:
 				i = 2
-			
+
 			out[i] = pt
 
 		out = np.array(out).astype(np.float32)
@@ -253,7 +289,7 @@ class ImageProcessor():
 		for box in boxes:
 
 			warp_mat = cv2.getPerspectiveTransform(
-				self._assert_box_starts_topleft_clockwise_upright(box), 
+				self._assert_box_starts_topleft_clockwise_upright(box),
 				target_rect
 			)
 
@@ -269,8 +305,6 @@ class ImageProcessor():
 		Match templates to image by convolution.
 		Returns matched card type name, (x, y) coordinates of matched template and whether the template was found upside down.
 		"""
-		inv = np.rot90(img, k=2)
-
 		maxes = []
 		locs  = []
 
@@ -282,21 +316,22 @@ class ImageProcessor():
 
 		for tmpl in self.templates:
 			kernel = tmpl.get_kernel()
-			
-			match     = cv2.matchTemplate(img, kernel, cv2.TM_CCOEFF_NORMED)
-			match_inv = cv2.matchTemplate(inv, kernel, cv2.TM_CCOEFF_NORMED)
+			kernel_inv = cv2.rotate(kernel, cv2.ROTATE_180)
+
+			match     = cv2.matchTemplate(img, kernel, 	   cv2.TM_CCOEFF)
+			match_inv = cv2.matchTemplate(img, kernel_inv, cv2.TM_CCOEFF)
 
 			_, max_, _, (x, y)            = cv2.minMaxLoc(match)
 			_, max_inv, _, (x_inv, y_inv) = cv2.minMaxLoc(match_inv)
 
 			maxes.append(max_)
 			locs.append((int(x+kernel.shape[1]/2), int(y+kernel.shape[0]/2)))
-		
+
 			maxes_inv.append(max_inv)
 			locs_inv.append((int(x_inv+kernel.shape[1]/2), int(y_inv+kernel.shape[0]/2)))
-		
 
-		isinv = np.max(maxes) < np.max(maxes_inv)
+
+		isinv = np.max(maxes) <= np.max(maxes_inv)
 
 		if isinv:
 			idx = np.argmax(maxes)
