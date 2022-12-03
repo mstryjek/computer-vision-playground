@@ -4,7 +4,7 @@ import cv2
 from config import Config
 from utils import to_kernel
 
-from typing import Any, List
+from typing import Any, List, Tuple
 
 
 from template import CardType, CardTemplate
@@ -24,8 +24,8 @@ class ImageProcessor():
 			CardTemplate('./templates/6.png',  CardType._6),
 			CardTemplate('./templates/8.png',  CardType._8),
 			CardTemplate('./templates/9.png',  CardType._9),
-			CardTemplate('./templates/p2.png', CardType.BLOCK),
-			CardTemplate('./templates/b.png',  CardType.PLUS_2)
+			CardTemplate('./templates/b.png', CardType.BLOCK),
+			CardTemplate('./templates/p2.png',  CardType.PLUS_2)
 		]
 
 
@@ -264,10 +264,50 @@ class ImageProcessor():
 		return ret
 
 
-	def match_templates_to_image(self, img: np.ndarray) -> CardType:
+	def match_templates_to_image(self, img: np.ndarray) -> Tuple[str, Tuple[int, int], bool]:
 		"""
 		Match templates to image by convolution.
+		Returns matched card type name, (x, y) coordinates of matched template and whether the template was found upside down.
 		"""
-		pass
+		inv = np.rot90(img, k=2)
+
+		maxes = []
+		locs  = []
+
+		maxes_inv = []
+		locs_inv  = []
+
+		## TODO Value inversion
+		## TODO Image flip if upside down
+
+		for tmpl in self.templates:
+			kernel = tmpl.get_kernel()
+			
+			match     = cv2.matchTemplate(img, kernel, cv2.TM_CCOEFF_NORMED)
+			match_inv = cv2.matchTemplate(inv, kernel, cv2.TM_CCOEFF_NORMED)
+
+			_, max_, _, (x, y)            = cv2.minMaxLoc(match)
+			_, max_inv, _, (x_inv, y_inv) = cv2.minMaxLoc(match_inv)
+
+			maxes.append(max_)
+			locs.append((int(x+kernel.shape[1]/2), int(y+kernel.shape[0]/2)))
+		
+			maxes_inv.append(max_inv)
+			locs_inv.append((int(x_inv+kernel.shape[1]/2), int(y_inv+kernel.shape[0]/2)))
+		
+
+		isinv = np.max(maxes) < np.max(maxes_inv)
+
+		if isinv:
+			idx = np.argmax(maxes)
+			locs_ = locs
+		else:
+			idx = np.argmax(maxes_inv)
+			locs_ = locs_inv
+
+		return self.templates[idx].get_name(), locs_[idx], isinv
+
+
+
 
 

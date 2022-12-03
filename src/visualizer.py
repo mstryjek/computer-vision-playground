@@ -94,6 +94,15 @@ class ProcessingVisualizer():
 		return cv2.drawContours(img.copy(), cnts, -1, tuple(self.CFG.COLOR), 1, cv2.LINE_AA)
 
 
+	def draw_point(self, img: np.ndarray, point: Tuple[int, int], color: Tuple[int, int, int] = (0, 0, 255)) -> np.ndarray:
+		"""
+		Draw a point on the image.
+		"""
+		draw = np.stack([img]*3, axis=-1) if len(img.shape) == 2 else img.copy()
+
+		return cv2.circle(draw, point, 3, color, thickness=-1, lineType=cv2.LINE_AA)
+
+
 	def _draw_frame_info(self, frame_id: int, step: int, img: Optional[np.ndarray] = None) -> np.ndarray:
 		"""
 		Draw a label with information about the current frame number, processing step id and processing
