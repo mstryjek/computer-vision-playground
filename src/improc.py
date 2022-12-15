@@ -182,6 +182,17 @@ class ImageProcessor():
 		return contours[-n:]
 
 
+	def keep_largest_contours(self, img: np.ndarray, n: int) -> np.ndarray:
+		"""
+		Remove all contours except `n` largest ones (by area).
+		Expects a binary image.
+		"""
+		cnts = self.get_largest_contours(img, n)
+
+		ret = np.zeros_like(img)
+		return cv2.drawContours(ret, cnts, -1, (255,), -1)
+
+
 	def remove_contours_touching_borders(self, img: np.ndarray) -> np.ndarray:
 		"""
 		Remove any contours touching any of the window borders.
@@ -343,6 +354,58 @@ class ImageProcessor():
 		return self.templates[idx].get_name(), locs_[idx], isinv
 
 
+	def count_holes_in_largest_contour(self, img: np.ndarray) -> int:
+		"""
+		Count holes in largest contour in image.
+		Expects a binary image.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+		areas = [cv2.contourArea(cnt) for cnt in contours]
+		largest_cnt_index = np.argmax(areas)
+
+		holes = [
+			parent
+			for next_, prev, child, parent
+			in hierarchy[0, :, :]
+			if parent == largest_cnt_index
+		]
+
+		return len(holes)
+
+	
+	def largest_contour_vh_aspect_ratio(self, img: np.ndarray) -> float:
+		"""
+		Calculate the vertical to horizontal aspect ratio of the largest contour (by area) in the image.
+		Expects a binary image.
+		"""
+		contours, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+		cnt = np.squeeze(sorted(contours, key=cv2.contourArea)[-1])
+
+		v = np.max(cnt[:, 1]) - np.min(cnt[:, 1])
+		h = np.max(cnt[:, 0]) - np.min(cnt[:, 0])
+
+		return v/h
 
 
+	def classify_card(self, img: np.ndarray) -> CardType:
+		"""
+		Classify an UNO symbol.
+		Expects a warped, binary image with most noise removed, and the largest contour being the symbol.
+		"""
+
+		holes = self.count_holes_in_largest_contour(img)
+
+		if holes == 2:
+			ar = self.largest_contour_vh_aspect_ratio(img)
+			if ar >= self.CFG.ASPECT_RATIO_THRESH:
+				return CardType._8
+			else:
+				return CardType.BLOCK
+		elif holes == 1:
+			return CardType._6 ## TODO
+		elif holes == 0:
+			return CardType.PLUS_2
+		else:
+			raise ValueError(f'Found contour with invalid number of holes: {holes}')
 

@@ -42,8 +42,13 @@ def main() -> None:
 			warped = proc.warp_contours(threshed, boxes)
 			warped = [proc.crop_image_center(w) for w in warped]
 			warped = [proc.remove_contours_touching_borders(w) for w in warped]
-			## TODO: Sort by closeness to warped image center, but rejecting anything that touches window 
-			## Choose 2 closes contours, keep only those & then dilate, to join them into one
+			warped = [proc.keep_largest_contours(w, 3) for w in warped]
+
+			## FIXME Close warped symbols just a bit before classification so that there are no holes in +2 cards
+
+			cls_ = [proc.classify_card(w) for w in warped]
+			## TODO: Sort by closeness to warped image center, but rejecting anything that touches window
+			## [X] Choose 2 closes contours, keep only those & then dilate, to join them into one
 			## Eights have 2 holes & >1.5 aspect ratio, blocks are same but closer to square
 			## +2's have no holes
 			## 
@@ -53,8 +58,8 @@ def main() -> None:
 			## ^^^ Connect sixes and nines with bars if neccessary
 			# warped = [proc.close(w) for w in warped]
 
-			for i, w in enumerate(warped):
-				vis.store(w, f'Warp {i+1}')
+			for c, w in zip(cls_, warped):
+				vis.store(w, f'{c.value}')
 
 
 

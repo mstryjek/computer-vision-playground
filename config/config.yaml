@@ -58,3 +58,4 @@ PROCESSING:                 ## Config for image processing
   CROP:
     PERC_X: 0.25
     PERC_Y: 0.25
+  ASPECT_RATIO_THRESH: 1.4  ## Threshold for v/h aspect ratio [float]
