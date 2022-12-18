@@ -4,6 +4,7 @@ from visualizer import ProcessingVisualizer
 
 from improc import ImageProcessor
 
+import cv2
 
 def main() -> None:
 	## Find the config file - automatically, even of it's been moved
@@ -25,28 +26,36 @@ def main() -> None:
 			Feel free to delete this comment after you've read through it.
 			"""
 			## <<======================= START OF PROCESSING ==============================>>
-			gray = proc.to_grayscale(img)
+			contrasted = proc.contrast(img)
+			# vis.store(contrasted, 'Contrast')
+
+			gray = proc.to_grayscale(contrasted)
 			# vis.store(gray, 'Grayscale')
 
 			blurred = proc.smooth(gray)
 			# vis.store(blurred, 'Blurrred')
 
 			threshed = proc.otsu(blurred)
-			# vis.store(threshed, 'Otsu')
+			vis.store(threshed, 'Otsu')
 
 			contours = proc.get_largest_contours(threshed, 4)
 			boxes = proc.contour_bounding_rects(contours)
 			# drawn = vis.draw_bounding_contours(threshed, boxes)
 			# vis.store(drawn, 'Contours')
 
+			orig_warp = proc.warp_contours(img, boxes)
+
 			warped = proc.warp_contours(threshed, boxes)
 			warped = [proc.crop_image_center(w) for w in warped]
-			warped = [proc.remove_contours_touching_borders_or_background(w) for w in warped]
-			for i, w in enumerate(warped):
-				vis.store(w, f'W{i}')
-			warped = [proc.keep_largest_contours(w, 3) for w in warped]
+			warped = [proc.erode(w) for w in warped]
+			warped = [proc.remove_contours_touching_borders(w) for w in warped]
+			warped = [proc.keep_largest_contours_with_holes(w, 2) for w in warped]
+			# for i, w in enumerate(warped):
+			# 	vis.store(w, f'W{i}')
 			warped = [proc.close(w) for w in warped]
 			warped = [proc.remove_small_holes(w) for w in warped]
+
+			warped = [proc.dilate(w) for w in warped]
 
 			cls_ = [proc.classify_card(w) for w in warped]
 			## TODO: Sort by closeness to warped image center, but rejecting anything that touches window
@@ -58,10 +67,11 @@ def main() -> None:
 			## ^^^ Try taking a couple top/bottom rows in case the symbol is slanted, should work
 			## ^^^ Width condition is not neccessary, just take the one that has more width
 			## ^^^ Connect sixes and nines with bars if neccessary
-			# warped = [proc.close(w) for w in warped]
 
-			# for c, w in zip(cls_, warped):
-			# 	vis.store(w, f'{c.value}')
+			hues = [proc.get_color(w) for w in orig_warp]
+
+			for c, h, w in zip(cls_, hues, orig_warp):
+				vis.store(w, f'{c.value}|{h.name}')
 
 
 

@@ -12,6 +12,14 @@ class CardType(Enum):
 	WRONG  = 'WRONG'
 
 
+class Color(Enum):
+	RED    = [0, 0, 255]
+	BLUE   = [255, 0, 0]
+	GREEN  = [0, 255, 0]
+	YELLOW = [0, 255, 255]
+
+
+
 @dataclass(eq=False, repr=True, init=False, order=False)
 class CardTemplate():
 	def __init__(self, kernel_path: str, card_type: CardType) -> None:

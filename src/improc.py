@@ -7,7 +7,7 @@ from utils import to_kernel
 from typing import Any, List, Tuple
 
 
-from template import CardType, CardTemplate
+from template import CardType, CardTemplate, Color
 
 
 class ImageProcessor():
@@ -141,6 +141,30 @@ class ImageProcessor():
 		return cv2.threshold(img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
 
+	def adaptive_thresh(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Perform adaptive thresholding.
+		"""
+		assert len(img.shape) == 2, 'Thresholding can only be performed on grayscale images!'
+
+		return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+
+
+	def contrast(self, img: np.ndarray) -> np.ndarray:
+		"""
+		
+		"""
+		lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+		cl, ca, cb = cv2.split(lab)
+
+		clahe = cv2.createCLAHE(clipLimit=20.0, tileGridSize=(32, 32))
+		cl = clahe.apply(cl)
+
+		lab = cv2.merge((cl, ca, cb))
+
+		return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+
 	def remove_small_blobs(self, img: np.ndarray) -> np.ndarray:
 		"""
 		Remove all blobs (contours) below a given surface area.
@@ -191,6 +215,55 @@ class ImageProcessor():
 
 		ret = np.zeros_like(img)
 		return cv2.drawContours(ret, cnts, -1, (255,), -1)
+
+
+	def keep_largest_contours_with_holes(self, img: np.ndarray, n: int) -> np.ndarray:
+		"""
+		Remove all contours except `n` largest ones (by area), keeping their holes (enclosed contours).
+		Expects a binary image.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+		areas = [cv2.contourArea(c) for c in contours]
+		largest_cnt_indices = np.argsort(areas)[::-1]
+
+		non_hole_cnts = [
+			i for i, (_, _, _, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent == -1
+		]
+
+		largest_outlines = []
+
+		cnt = 0
+		i = 0
+		while cnt < n:
+			if i == len(largest_cnt_indices):
+				break
+			idx = largest_cnt_indices[i]
+			if idx in non_hole_cnts:
+				largest_outlines.append(idx)
+				cnt += 1
+			i += 1
+
+
+		hole_indices = [
+			i
+			for i, (_, _ , _, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent in largest_outlines
+		]
+
+		contours_to_keep = [
+			c for i, c in enumerate(contours) 
+			if i in largest_outlines
+			or i in hole_indices
+		]
+
+		res = np.zeros_like(img)
+		return cv2.drawContours(res, contours_to_keep, -1, (255,), -1)
+
+
 
 
 	def remove_contours_touching_borders(self, img: np.ndarray) -> np.ndarray:
@@ -605,6 +678,39 @@ class ImageProcessor():
 		elif holes == 0:
 			return CardType.PLUS_2
 		else:
-			return CardType.WRONG
 			raise ValueError(f'Found contour with invalid number of holes: {holes}')
+
+	
+	def get_mean_nonzero_hue(self, img: np.ndarray) -> int:
+		"""
+		Get mean hue of the image, ignoring black, gray and white values.
+		"""
+		hsv = cv2.cvtColor(img.astype(np.float32), cv2.COLOR_BGR2HSV)
+		h = hsv[:, :, 0]
+		s = hsv[:, :, 1]
+
+		return int(np.mean(h[np.logical_and(h != 0, s > 0.3)]))
+		
+
+	def get_color(self, img: np.ndarray) -> Color:
+		"""
+		Get card color.
+		"""
+		h = self.get_mean_nonzero_hue(img)
+
+		# colors = [
+		# 	Color.RED,
+		# 	Color.GREEN,
+		# 	Color.BLUE,
+		# 	Color.YELLOW
+		# ]
+
+		if h > 224:
+			return Color.RED
+		elif h > 190:
+			return Color.BLUE
+		elif h > 160:
+			return Color.GREEN
+		else:
+			return Color.YELLOW
 
