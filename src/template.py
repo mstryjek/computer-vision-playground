@@ -9,6 +9,7 @@ class CardType(Enum):
 	_9     = 'NINE'
 	PLUS_2 = 'PLUS_2'
 	BLOCK  = 'BLOCK'
+	WRONG  = 'WRONG'
 
 
 @dataclass(eq=False, repr=True, init=False, order=False)

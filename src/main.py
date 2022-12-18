@@ -36,15 +36,17 @@ def main() -> None:
 
 			contours = proc.get_largest_contours(threshed, 4)
 			boxes = proc.contour_bounding_rects(contours)
-			drawn = vis.draw_bounding_contours(threshed, boxes)
+			# drawn = vis.draw_bounding_contours(threshed, boxes)
 			# vis.store(drawn, 'Contours')
 
 			warped = proc.warp_contours(threshed, boxes)
 			warped = [proc.crop_image_center(w) for w in warped]
-			warped = [proc.remove_contours_touching_borders(w) for w in warped]
+			warped = [proc.remove_contours_touching_borders_or_background(w) for w in warped]
+			for i, w in enumerate(warped):
+				vis.store(w, f'W{i}')
 			warped = [proc.keep_largest_contours(w, 3) for w in warped]
-
-			## FIXME Close warped symbols just a bit before classification so that there are no holes in +2 cards
+			warped = [proc.close(w) for w in warped]
+			warped = [proc.remove_small_holes(w) for w in warped]
 
 			cls_ = [proc.classify_card(w) for w in warped]
 			## TODO: Sort by closeness to warped image center, but rejecting anything that touches window
@@ -58,8 +60,8 @@ def main() -> None:
 			## ^^^ Connect sixes and nines with bars if neccessary
 			# warped = [proc.close(w) for w in warped]
 
-			for c, w in zip(cls_, warped):
-				vis.store(w, f'{c.value}')
+			# for c, w in zip(cls_, warped):
+			# 	vis.store(w, f'{c.value}')
 
 
 

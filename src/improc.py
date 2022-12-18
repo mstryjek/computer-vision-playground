@@ -197,7 +197,7 @@ class ImageProcessor():
 		"""
 		Remove any contours touching any of the window borders.
 		"""
-		contours, _ = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
 		h, w = img.shape[:2]
 
@@ -214,6 +214,56 @@ class ImageProcessor():
 		])
 
 		return cv2.drawContours(np.zeros(img.shape, dtype=np.uint8), contours, -1, (255,), -1)
+
+
+	def remove_contours_touching_borders_or_background(self, img: np.ndarray) -> np.ndarray:
+		"""
+		
+		"""
+		if self.has_white_bg(img):
+			img = self.erode(img)
+			return self.remove_white_background(img)
+		else:
+			return self.remove_contours_touching_borders(img)
+
+
+	def remove_white_background(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Remove white background from an image.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+		areas = [cv2.contourArea(c) for c in contours]
+		largest_cnt_idx = np.argmax(areas)
+
+		holes = [
+			i
+			for i, (_, _, _, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent == largest_cnt_idx
+		]
+
+		holes_areas = [areas[i] for i in holes]
+		order  = np.argsort(holes_areas)
+		largest_hole = holes[order[-1]]
+
+		contours = [c for i, c in enumerate(contours) if i not in [largest_cnt_idx, largest_hole]]
+
+		res = np.zeros_like(img)
+		return cv2.drawContours(res, contours, -1, (255,), -1)
+
+
+
+	def has_white_bg(self, img: np.ndarray) -> bool:
+		"""
+		Check whether the images has white background.
+		"""
+		size = np.prod(img.shape)
+
+		nonzero = np.count_nonzero(img)
+
+		return nonzero/size >= self.CFG.BG_PERC_THRESH
+
 
 
 	def crop_image_center(self, img: np.ndarray) -> np.ndarray:
@@ -388,12 +438,152 @@ class ImageProcessor():
 		return v/h
 
 
+	def is_contour_wider_at_top(self, img: np.ndarray, margin: int = 4) -> bool:
+		"""
+		Check whether the wider horizontal edge of a contour is above (True) or below (False) its center.
+		Consider `margin` rows to make allowances for any slant in contour edges.
+		"""
+		cnt ,= self.get_largest_contours(img, 1)
+
+		cnt_img = np.zeros_like(img)
+
+		cnt_img = cv2.drawContours(cnt_img, [cnt], -1, (255,), -1)
+
+		cnt = np.squeeze(cnt)
+		y_max = np.max(cnt[:, 1])
+		y_min = np.min(cnt[:, 1])
+
+		top = cnt_img[y_min:y_min+margin, :]
+		bottom = cnt_img[y_max-margin:y_max, :]
+
+		return np.count_nonzero(top) >= np.count_nonzero(bottom)
+
+
+	def is_contour_hole_above_center(self, img: np.ndarray) -> bool:
+		"""
+		Check whether the only hole in the contour is above (True) or below (False) its center of gravity.
+		Expects a binary image, where the largest contour has only one hole.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+		areas = [cv2.contourArea(cnt) for cnt in contours]
+		largest_cnt_index = np.argmax(areas)
+
+		hole_idx = [
+			i
+			for i, (next_, prev, child, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent == largest_cnt_index
+		][0]
+
+		cnt = contours[largest_cnt_index]
+		hole_cnt = contours[hole_idx]
+		
+		_, y = self.get_contour_center(cnt)
+		_, hole_y = self.get_contour_center(hole_cnt)
+
+		return hole_y <= y
+	
+
+	@staticmethod
+	def get_contour_center(cnt: np.ndarray) -> Tuple[int, int]:
+		"""
+		Get the center of gravity of a contour as (x, y).
+		"""
+		M = cv2.moments(cnt)
+
+		try:
+			x = int(M['m10'] / M['m00'])
+			y = int(M['m01'] / M['m00'])
+			return (x, y)
+		except ZeroDivisionError:
+			return None, None
+
+
+	def remove_small_holes(self, img: np.ndarray) -> np.ndarray:
+		"""
+		Remove all holes in the largest contour that are smaller than the defined threshold.
+		Expects a binary image.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+		areas = [cv2.contourArea(cnt) for cnt in contours]
+		largest_cnt_index = np.argmax(areas)
+
+		holes = [
+			i
+			for i, (next_, prev, child, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent == largest_cnt_index
+		]
+
+		holes_to_remove = [
+			i for i in holes
+			if cv2.contourArea(contours[i]) < self.CFG.HOLE_AREA_THRESH	
+		]
+		
+		contours = [cnt for i, cnt in enumerate(contours) if i not in holes_to_remove]
+
+		res = np.zeros_like(img)
+		res = cv2.drawContours(res, contours, -1, (255,), -1)
+
+		return res
+	
+
+	def has_n_large_contours(self, img: np.ndarray, n: int) -> bool:
+		"""
+		Check whether a binary image has at least n contours above the specified area.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+		areas = [cv2.contourArea(cnt) for cnt in contours]
+		largest_cnt_index = np.argmax(areas)
+
+		holes = [
+			i
+			for i, (next_, prev, child, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent == largest_cnt_index
+		]
+
+		contours = [c for i, c in enumerate(contours) if cv2.contourArea(c) > self.CFG.BLOB_AREA_THRESH and i not in holes]
+
+		return len(contours) >= n
+
+
+	def is_second_largest_contour_above_first(self, img: np.ndarray) -> bool:
+		"""
+		Check whether the second largest contour in a binary image is above (True) or below (False) the largest contour.
+		"""
+		contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
+
+		areas = [cv2.contourArea(cnt) for cnt in contours]
+		largest_cnt_index = np.argmax(areas)
+
+		holes = [
+			i
+			for i, (next_, prev, child, parent)
+			in enumerate(hierarchy[0, :, :])
+			if parent == largest_cnt_index
+		]
+
+		contours  = [c for i, c in enumerate(contours) if i not in holes]
+
+		contours = sorted(contours, key=cv2.contourArea)[::-1][:2]
+
+		moments = [cv2.moments(c) for c in contours]
+
+		y_values = [int(m['m01'] / m['m00']) for m in moments]
+
+		return y_values[1] <= y_values[0]
+
+
 	def classify_card(self, img: np.ndarray) -> CardType:
 		"""
 		Classify an UNO symbol.
 		Expects a warped, binary image with most noise removed, and the largest contour being the symbol.
 		"""
-
 		holes = self.count_holes_in_largest_contour(img)
 
 		if holes == 2:
@@ -403,9 +593,18 @@ class ImageProcessor():
 			else:
 				return CardType.BLOCK
 		elif holes == 1:
-			return CardType._6 ## TODO
+			hole_above = self.is_contour_hole_above_center(img)
+			if self.has_n_large_contours(img, 2):
+				line_above = self.is_second_largest_contour_above_first(img)
+			else:
+				line_above = self.is_contour_wider_at_top(img, 2)
+			if line_above == hole_above:
+				return CardType._6
+			else:
+				return CardType._9
 		elif holes == 0:
 			return CardType.PLUS_2
 		else:
+			return CardType.WRONG
 			raise ValueError(f'Found contour with invalid number of holes: {holes}')
 
